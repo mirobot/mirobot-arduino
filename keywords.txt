@@ -1,0 +1,11 @@
+Mirobot	KEYWORD1
+forward	KEYWORD2
+back	KEYWORD2
+left	KEYWORD2
+right	KEYWORD2
+penup	KEYWORD2
+pendown	KEYWORD2
+setBlocking	KEYWORD2
+useWebSockets	KEYWORD2
+useRawSockets	KEYWORD2
+processInput	KEYWORD2
