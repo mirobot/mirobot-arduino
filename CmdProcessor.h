@@ -7,18 +7,11 @@ class Mirobot;
 
 #include "Mirobot.h"
 
-#define INPUT_BUFFER_LENGTH 60
-#define COMMAND_COUNT  12
-
-#define NO_SOCKET 0
-#define RAW_SOCKET 1
-#define WEB_SOCKET 2
-
-#define RUNNING 1
-#define READY 2
-#define HANDSHAKE 3
+#define INPUT_BUFFER_LENGTH 180
 
 typedef enum {EXPECT_ATTR, ATTR, EXPECT_VAL, VAL} parseState_t;
+typedef enum {WAITING, WEBSOCKET_INIT, WEBSOCKET_RESPOND, WEBSOCKET_READY, HTTP_INIT, HTTP_RESPOND, HTTP_READY} httpState_t;
+typedef enum {RAW, HTTP, WEBSOCKET} socketMode_t;
 
 typedef void (* fp_main) (void *, char *);
 typedef boolean (* fp_ready) (void *);
@@ -36,22 +29,26 @@ class CmdProcessor {
     void addUserCmd(char* cmd, fp_main fn, fp_ready ready);
     void setup(Stream &s, Mirobot &m);
     void process();
-    char socketType;
   private:
-    void processLine();
-    void extractAttr(const char attr[4], char *json, char *output);
+    boolean processLine();
+    void extractAttr(const char attr[4], char *json, char *output, char len);
     void processCmd(char &cmd, char &arg, char &id);
     void runCmd(char &cmd, char &arg, char &id);
     void sendResponse(const char state[], const char msg[], char &id);
     Stream* _s;
     Mirobot* _m;
-    char state;
+    httpState_t httpState;
+    socketMode_t socketMode;
+    char webSocketKey[61];
+    char newLineCount;
     char input_buffer[INPUT_BUFFER_LENGTH];
     byte input_buffer_pos;
-    UserCmd user_cmds[COMMAND_COUNT];
-    byte user_cmd_counter;
     boolean in_process;
     char current_id[10];
+    unsigned long last_char;
+    boolean processWSFrame();
+    boolean processJSON();
+    boolean processHeaders();
 };
 
 #endif

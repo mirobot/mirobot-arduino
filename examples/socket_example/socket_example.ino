@@ -6,8 +6,8 @@
 Mirobot mirobot;
 
 void setup(){
-  mirobot.useRawSockets(Serial);
-  mirobot.setup();
+  Serial.begin(115200);
+  mirobot.setup(Serial);
 }
 
 void loop(){

@@ -12,10 +12,17 @@
 #define WHEEL_DISTANCE    126.0
 #define STEPS_PER_DEGREE  ((WHEEL_DISTANCE * 3.1416) / 360) * STEPS_PER_MM
 
+#define WIFI_RESET A4
+#define WIFI_READY A5
+#define STATUS_LED 8
+
+
+typedef enum {POWERED_UP, CONNECTED} mainState_t;
+
 class Mirobot {
   public:
     Mirobot();
-    void setup();
+    void setup(Stream &s);
     void forward(int distance);
     void back(int distance);
     void right(int angle);
@@ -24,12 +31,13 @@ class Mirobot {
     void pendown();
     boolean ready();
     void setBlocking(boolean val);
-    void useWebSockets(Stream &s);
-    void useRawSockets(Stream &s);
     void processInput();
   private:
     void wait();
-    void setupCmdProcessor(char type, Stream &s);
+    void ledHandler();
+    void checkState();
+    mainState_t mainState;
+    unsigned long lastLedChange;
     boolean blocking;
     Mirobot& self() { return *this; }
 };

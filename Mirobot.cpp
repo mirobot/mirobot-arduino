@@ -8,11 +8,25 @@ CmdProcessor::CmdProcessor p;
 
 Mirobot::Mirobot(){
   blocking = true;
+  mainState = POWERED_UP;
+  lastLedChange = millis();
   pen.attach(SERVO_PIN_A);
 }
 
-void Mirobot::setup(){
+void Mirobot::setup(Stream &s){
   HotStepper::setup();
+  blocking = false;
+  p.setup(s, self());
+  // Set up the status LED
+  pinMode(STATUS_LED, OUTPUT);
+  // Set up the pins to communicate with the WiFi module
+  pinMode(WIFI_READY, INPUT);  //nReady
+  pinMode(WIFI_RESET, OUTPUT); // Reset
+  digitalWrite(WIFI_RESET, HIGH); // Reset the wifi module when we reset
+  delay(20);
+  digitalWrite(WIFI_RESET, LOW); // Reset the wifi module when we reset
+  delay(20);
+  digitalWrite(WIFI_RESET, HIGH); // Reset the wifi module when we reset
 }
 
 void Mirobot::forward(int distance){
@@ -61,20 +75,30 @@ void Mirobot::wait(){
   }
 }
 
-void Mirobot::setupCmdProcessor(char type, Stream &s){
-  p.setup(s, self());
-  p.socketType = type;
-  blocking = false;
+void Mirobot::checkState(){
+  if(!digitalRead(WIFI_READY)){
+    mainState = CONNECTED;
+  }else{
+    mainState = POWERED_UP;
+  }
 }
 
-void Mirobot::useWebSockets(Stream &s){
-  setupCmdProcessor(WEB_SOCKET, s);
-}
-
-void Mirobot::useRawSockets(Stream &s){
-  setupCmdProcessor(RAW_SOCKET, s);
+void Mirobot::ledHandler(){
+  checkState();
+  switch(mainState){
+    case POWERED_UP:
+      if(millis() - lastLedChange > 250){
+        lastLedChange = millis();
+        digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
+      }
+      break;
+    case CONNECTED:
+      digitalWrite(STATUS_LED, HIGH);
+      break;
+  }
 }
 
 void Mirobot::processInput(){
+  ledHandler();
   p.process();
 }
