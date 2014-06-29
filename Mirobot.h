@@ -16,6 +16,8 @@
 #define WIFI_READY A5
 #define STATUS_LED 8
 
+#define MIROBOT_VERSION "20140629"
+
 
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
 
@@ -29,6 +31,9 @@ class Mirobot {
     void left(int angle);
     void penup();
     void pendown();
+    void pause();
+    void resume();
+    void stop();
     boolean ready();
     void setBlocking(boolean val);
     void processInput();

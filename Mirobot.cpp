@@ -10,11 +10,11 @@ Mirobot::Mirobot(){
   blocking = true;
   mainState = POWERED_UP;
   lastLedChange = millis();
-  pen.attach(SERVO_PIN_A);
 }
 
 void Mirobot::setup(Stream &s){
   HotStepper::setup();
+  pen.attach(SERVO_PIN_A);
   blocking = false;
   p.setup(s, self());
   // Set up the status LED
@@ -27,6 +27,7 @@ void Mirobot::setup(Stream &s){
   digitalWrite(WIFI_RESET, LOW); // Reset the wifi module when we reset
   delay(20);
   digitalWrite(WIFI_RESET, HIGH); // Reset the wifi module when we reset
+  penup();
 }
 
 void Mirobot::forward(int distance){
@@ -54,11 +55,26 @@ void Mirobot::right(int angle){
 }
 
 void Mirobot::penup(){
-  pen.write(80);
+  pen.write(10);
 }
 
 void Mirobot::pendown(){
-  pen.write(10);
+  pen.write(90);
+}
+
+void Mirobot::pause(){
+  motor1.pause();
+  motor2.pause();
+}
+
+void Mirobot::resume(){
+  motor1.resume();
+  motor2.resume();
+}
+
+void Mirobot::stop(){
+  motor1.stop();
+  motor2.stop();
 }
 
 boolean Mirobot::ready(){

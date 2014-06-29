@@ -9,7 +9,6 @@ CmdProcessor::CmdProcessor(){
 }
 
 void CmdProcessor::setup(Stream &s, Mirobot &m){
-  Serial1.begin(115200);
   httpState = WAITING;
   _s = &s;
   _m = &m;
@@ -177,31 +176,46 @@ boolean CmdProcessor::processJSON(){
 }
 
 void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
-  if(in_process){
-    // the previous command hasn't finished, send an error
-    sendResponse("error", "Previous command not finished", id);
+  if(!strcmp(&cmd, "ping")){
+    sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "version")){
+    sendResponse("complete", MIROBOT_VERSION, id);
+  }else if(!strcmp(&cmd, "pause")){
+    _m->pause();
+    sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "resume")){
+    _m->resume();
+    sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "stop")){
+    _m->stop();
+    sendResponse("complete", "", id);
   }else{
-    strcpy(current_id, &id);
-    in_process = true;
-    if(!strcmp(&cmd, "forward")){
-      _m->forward(atoi(&arg));
-    }else if(!strcmp(&cmd, "back")){
-      _m->back(atoi(&arg));
-    }else if(!strcmp(&cmd, "right")){
-      _m->right(atoi(&arg));
-    }else if(!strcmp(&cmd, "left")){
-      _m->left(atoi(&arg));
-    }else if(!strcmp(&cmd, "penup")){
-      _m->penup();
-    }else if(!strcmp(&cmd, "pendown")){
-      _m->pendown();
-    }else if(!strcmp(&cmd, "ping")){
+    // It's a command that runs for some time
+    if(in_process){
+      // the previous command hasn't finished, send an error
+      sendResponse("error", "Previous command not finished", id);
     }else{
-      // the command isn't recognised, send an error
-      sendResponse("error", "Command not recognised", id);
-      return;
+      strcpy(current_id, &id);
+      in_process = true;
+      if(!strcmp(&cmd, "forward")){
+        _m->forward(atoi(&arg));
+      }else if(!strcmp(&cmd, "back")){
+        _m->back(atoi(&arg));
+      }else if(!strcmp(&cmd, "right")){
+        _m->right(atoi(&arg));
+      }else if(!strcmp(&cmd, "left")){
+        _m->left(atoi(&arg));
+      }else if(!strcmp(&cmd, "penup")){
+        _m->penup();
+      }else if(!strcmp(&cmd, "pendown")){
+        _m->pendown();
+      }else{
+        // the command isn't recognised, send an error
+        sendResponse("error", "Command not recognised", id);
+        return;
+      }
+      sendResponse("accepted", "", *current_id);
     }
-    sendResponse("accepted", "", *current_id);
   }
 }
 
