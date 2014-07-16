@@ -1,6 +1,6 @@
 #include "CmdProcessor.h"
 #include "sha1.h"
-#include "base64.h"
+#include "Base64.h"
 
 CmdProcessor::CmdProcessor(){
   socketMode = RAW;
