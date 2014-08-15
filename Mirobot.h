@@ -1,6 +1,7 @@
 #ifndef Mirobot_h
 #define Mirobot_h
 
+#define FROM_LIB
 #include "Arduino.h"
 #include "HotStepper.h"
 #include "PWMServo.h"
@@ -12,12 +13,13 @@
 #define WHEEL_DISTANCE    126.0
 #define STEPS_PER_DEGREE  ((WHEEL_DISTANCE * 3.1416) / 360) * STEPS_PER_MM
 
-#define WIFI_RESET A4
-#define WIFI_READY A5
-#define STATUS_LED 8
+#define WIFI_RESET 3
+#define WIFI_READY 2
+#define STATUS_LED 13
 
-#define MIROBOT_VERSION "20140629"
+#define MIROBOT_VERSION "20140811"
 
+#define HOTSTEPPER_TIMER1
 
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
 
@@ -46,6 +48,5 @@ class Mirobot {
     boolean blocking;
     Mirobot& self() { return *this; }
 };
-
 
 #endif
