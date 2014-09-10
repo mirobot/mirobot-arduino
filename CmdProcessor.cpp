@@ -178,6 +178,9 @@ boolean CmdProcessor::processJSON(){
 void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
   if(!strcmp(&cmd, "ping")){
     sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "reset")){
+    sendResponse("complete", "", id);
+    _m->reset();
   }else if(!strcmp(&cmd, "version")){
     sendResponse("complete", MIROBOT_VERSION, id);
   }else if(!strcmp(&cmd, "pause")){

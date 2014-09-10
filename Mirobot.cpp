@@ -5,6 +5,9 @@ HotStepper motor1(&PORTB, 0b00011101);
 HotStepper motor2(&PORTD, 0b11110000);
 CmdProcessor::CmdProcessor p;
 
+// Pointer to the bootloader memory location
+void* bl = (void *) 0x3c00;
+
 Mirobot::Mirobot(){
   blocking = true;
   mainState = POWERED_UP;
@@ -72,6 +75,12 @@ void Mirobot::resume(){
 void Mirobot::stop(){
   motor1.stop();
   motor2.stop();
+}
+
+void Mirobot::reset(){
+  // Give the response message time to get out
+  delay(100);
+  goto *bl;
 }
 
 boolean Mirobot::ready(){

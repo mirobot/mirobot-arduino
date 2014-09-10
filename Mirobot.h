@@ -40,6 +40,7 @@ class Mirobot {
     void pause();
     void resume();
     void stop();
+    void reset();
     boolean ready();
     void setBlocking(boolean val);
     void process();
