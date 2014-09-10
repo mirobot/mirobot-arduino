@@ -3,7 +3,6 @@
 
 HotStepper motor1(&PORTB, 0b00011101);
 HotStepper motor2(&PORTD, 0b11110000);
-PWMServo pen;
 CmdProcessor::CmdProcessor p;
 
 Mirobot::Mirobot(){
@@ -14,19 +13,17 @@ Mirobot::Mirobot(){
 
 void Mirobot::setup(Stream &s){
   HotStepper::setup();
-  pen.attach(SERVO_PIN_A);
+  // Set up the pen arm servo
+  pinMode(SERVO_PIN, OUTPUT);
+  setPenState(UP);
+  // We will be non-blocking so we can continue to process serial input
   blocking = false;
+  // Set up the command processor
   p.setup(s, self());
   // Set up the status LED
   pinMode(STATUS_LED, OUTPUT);
-  // Set up the pins to communicate with the WiFi module
+  // Set up the ready pin to communicate with the WiFi module
   pinMode(WIFI_READY, INPUT);  //nReady
-  pinMode(WIFI_RESET, OUTPUT); // Reset
-  digitalWrite(WIFI_RESET, HIGH); // Reset the wifi module when we reset
-  delay(20);
-  digitalWrite(WIFI_RESET, LOW); // Reset the wifi module when we reset
-  delay(20);
-  digitalWrite(WIFI_RESET, HIGH); // Reset the wifi module when we reset
   penup();
 }
 
@@ -55,11 +52,11 @@ void Mirobot::right(int angle){
 }
 
 void Mirobot::penup(){
-  pen.write(10);
+  setPenState(UP);
 }
 
 void Mirobot::pendown(){
-  pen.write(90);
+  setPenState(DOWN);
 }
 
 void Mirobot::pause(){
@@ -78,7 +75,7 @@ void Mirobot::stop(){
 }
 
 boolean Mirobot::ready(){
-  return (motor1.ready() && motor2.ready());
+  return (motor1.ready() && motor2.ready() && !servo_pulses_left);
 }
 
 void Mirobot::setBlocking(boolean val){
@@ -89,6 +86,12 @@ void Mirobot::wait(){
   if(blocking){
     while(!ready()){}
   }
+}
+
+void Mirobot::setPenState(penState_t state){
+  penState = state;
+  servo_pulses_left = SERVO_PULSES;
+  next_servo_pulse = 0;
 }
 
 void Mirobot::checkState(){
@@ -114,7 +117,25 @@ void Mirobot::ledHandler(){
   }
 }
 
-void Mirobot::processInput(){
+void Mirobot::servoHandler(){
+  if(servo_pulses_left){
+    if(micros() >= next_servo_pulse){
+      servo_pulses_left--;
+      digitalWrite(SERVO_PIN, HIGH);
+      if(penState == UP){
+        next_servo_pulse = micros() + 10800;
+        delayMicroseconds(1200);
+      }else{
+        next_servo_pulse = micros() + 10000;
+        delayMicroseconds(2000);
+      }
+      digitalWrite(SERVO_PIN, LOW);
+    } 
+  }
+}
+
+void Mirobot::process(){
   ledHandler();
+  servoHandler();
   p.process();
 }

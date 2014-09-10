@@ -4,7 +4,6 @@
 #define FROM_LIB
 #include "Arduino.h"
 #include "HotStepper.h"
-#include "PWMServo.h"
 #include "CmdProcessor.h"
 
 #define STEPS_PER_TURN    2048.0
@@ -21,7 +20,12 @@
 
 #define HOTSTEPPER_TIMER1
 
+#define SERVO_PIN 9
+#define SERVO_PULSES 15
+
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
+
+typedef enum {UP, DOWN} penState_t;
 
 class Mirobot {
   public:
@@ -38,15 +42,20 @@ class Mirobot {
     void stop();
     boolean ready();
     void setBlocking(boolean val);
-    void processInput();
+    void process();
   private:
     void wait();
     void ledHandler();
+    void servoHandler();
     void checkState();
     mainState_t mainState;
     unsigned long lastLedChange;
     boolean blocking;
     Mirobot& self() { return *this; }
+    penState_t penState;
+    void setPenState(penState_t);
+    unsigned long next_servo_pulse;
+    unsigned char servo_pulses_left;
 };
 
 #endif

@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <HotStepper.h>
-#include <PWMServo.h>
 #include <Mirobot.h>
 
 Mirobot mirobot;
@@ -11,5 +10,5 @@ void setup(){
 }
 
 void loop(){
-  mirobot.processInput();
+  mirobot.process();
 }
