@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <HotStepper.h>
-#include <PWMServo.h>
 #include <Mirobot.h>
 
 Mirobot mirobot;
@@ -30,6 +29,6 @@ void loop(){
     mirobot.right(144);
   }
   mirobot.penup();
-  
+
   delay(10000);
 }
