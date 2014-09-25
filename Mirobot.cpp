@@ -1,8 +1,8 @@
 #include "Arduino.h"
 #include "Mirobot.h"
 
-HotStepper motor1(&PORTC, 0);
-HotStepper motor2(&PORTD, 4);
+HotStepper motor1(&PORTC, 0b00001111);
+HotStepper motor2(&PORTD, 0b11110000);
 PWMServo pen;
 CmdProcessor::CmdProcessor p;
 
