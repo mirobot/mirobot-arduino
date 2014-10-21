@@ -65,22 +65,38 @@ void Mirobot::pendown(){
 void Mirobot::pause(){
   motor1.pause();
   motor2.pause();
+  paused = true;
 }
 
 void Mirobot::resume(){
   motor1.resume();
   motor2.resume();
+  paused = false;
 }
 
 void Mirobot::stop(){
   motor1.stop();
   motor2.stop();
+  following = false;
+  colliding = false;
 }
 
 void Mirobot::reset(){
   // Give the response message time to get out
   delay(100);
   goto *bl;
+}
+
+void Mirobot::follow(){
+  following = true;
+}
+
+void Mirobot::collide(){
+  colliding = true;
+}
+
+void Mirobot::beep(int duration){
+  tone(SPEAKER_PIN, NOTE_C4, duration);
 }
 
 boolean Mirobot::ready(){
@@ -109,6 +125,14 @@ void Mirobot::checkState(){
   }else{
     mainState = POWERED_UP;
   }
+}
+
+void Mirobot::followHandler(){
+
+}
+
+void Mirobot::collideHandler(){
+
 }
 
 void Mirobot::ledHandler(){
@@ -143,8 +167,17 @@ void Mirobot::servoHandler(){
   }
 }
 
+void Mirobot::autoHandler(){
+  if(following){
+    followHandler();
+  }else if(colliding){
+    collideHandler();
+  }
+}
+
 void Mirobot::process(){
   ledHandler();
   servoHandler();
+  autoHandler();
   p.process();
 }

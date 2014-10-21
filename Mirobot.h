@@ -16,12 +16,14 @@
 #define WIFI_READY 2
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "20140811"
+#define MIROBOT_VERSION "20141020"
 
 #define HOTSTEPPER_TIMER1
 
 #define SERVO_PIN 3
 #define SERVO_PULSES 15
+
+#define SPEAKER_PIN 9
 
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
 
@@ -41,13 +43,19 @@ class Mirobot {
     void resume();
     void stop();
     void reset();
+    void follow();
+    void collide();
+    void beep();
     boolean ready();
     void setBlocking(boolean val);
     void process();
   private:
     void wait();
+    void followHandler();
+    void collideHandler();
     void ledHandler();
     void servoHandler();
+    void autoHandler();
     void checkState();
     mainState_t mainState;
     unsigned long lastLedChange;
@@ -57,6 +65,9 @@ class Mirobot {
     void setPenState(penState_t);
     unsigned long next_servo_pulse;
     unsigned char servo_pulses_left;
+    boolean paused;
+    boolean following;
+    boolean colliding;
 };
 
 #endif

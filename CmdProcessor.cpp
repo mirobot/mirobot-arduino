@@ -212,6 +212,12 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
         _m->penup();
       }else if(!strcmp(&cmd, "pendown")){
         _m->pendown();
+      }else if(!strcmp(&cmd, "follow")){
+        _m->follow();
+      }else if(!strcmp(&cmd, "collide")){
+        _m->collide();
+      }else if(!strcmp(&cmd, "beep")){
+        _m->beep(atoi(&arg));
       }else{
         // the command isn't recognised, send an error
         sendResponse("error", "Command not recognised", id);
