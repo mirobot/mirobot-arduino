@@ -20,7 +20,7 @@
 
 #define HOTSTEPPER_TIMER1
 
-#define SERVO_PIN 9
+#define SERVO_PIN 3
 #define SERVO_PULSES 15
 
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
