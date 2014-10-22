@@ -18,12 +18,17 @@
 
 #define MIROBOT_VERSION "20141020"
 
-#define HOTSTEPPER_TIMER1
-
 #define SERVO_PIN 3
 #define SERVO_PULSES 15
 
 #define SPEAKER_PIN 9
+#define NOTE_C4  262
+
+#define LEFT_LINE_SENSOR  A0
+#define RIGHT_LINE_SENSOR A1
+
+#define LEFT_COLLIDE_SENSOR  A2
+#define RIGHT_COLLIDE_SENSOR A3
 
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
 
@@ -45,7 +50,7 @@ class Mirobot {
     void reset();
     void follow();
     void collide();
-    void beep();
+    void beep(int);
     boolean ready();
     void setBlocking(boolean val);
     void process();

@@ -15,7 +15,7 @@ Mirobot::Mirobot(){
 }
 
 void Mirobot::setup(Stream &s){
-  HotStepper::setup();
+  HotStepper::setup(TIMER1INT);
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
   setPenState(UP);
@@ -128,11 +128,38 @@ void Mirobot::checkState(){
 }
 
 void Mirobot::followHandler(){
-
+  if(motor1.ready() && motor2.ready()){
+    int diff = analogRead (LEFT_LINE_SENSOR) - analogRead (RIGHT_LINE_SENSOR);
+    if(diff > 100){
+      left(1);
+    }else if(diff < -100){
+      right(1);
+    }else{
+      forward(10);
+    }
+  }
 }
 
 void Mirobot::collideHandler(){
-
+  boolean collideLeft = digitalRead(LEFT_COLLIDE_SENSOR);
+  boolean collideRight = digitalRead(RIGHT_COLLIDE_SENSOR);
+  if(collideLeft){
+    motor1.stop();
+    motor2.stop();
+    //turn right
+    back(50);
+    wait();
+    right(90);
+  }else if(collideRight){
+    motor1.stop();
+    motor2.stop();
+    // turn left
+    back(50);
+    wait();
+    right(90);
+  }else{
+    forward(10);
+  }
 }
 
 void Mirobot::ledHandler(){
