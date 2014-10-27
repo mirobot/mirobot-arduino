@@ -1,6 +1,7 @@
 #include <stdlib.h>
 #include <HotStepper.h>
 #include <Mirobot.h>
+#include <EEPROM.h>
 
 Mirobot mirobot;
 

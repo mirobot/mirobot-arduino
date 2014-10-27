@@ -164,9 +164,9 @@ boolean CmdProcessor::processWSFrame(){
 
 
 boolean CmdProcessor::processJSON(){
-  char cmd[11], arg[11], id[11];
+  char cmd[13], arg[11], id[11];
   if(input_buffer_pos > 0 && input_buffer[0] == '{' && input_buffer[input_buffer_pos - 1] == '}'){
-    extractAttr("cmd", input_buffer, cmd, 10);
+    extractAttr("cmd", input_buffer, cmd, 12);
     extractAttr("arg", input_buffer, arg, 10);
     extractAttr("id", input_buffer, id, 10);
     processCmd(*cmd, *arg, *id);
@@ -176,6 +176,7 @@ boolean CmdProcessor::processJSON(){
 }
 
 void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
+  char v[8];
   if(!strcmp(&cmd, "ping")){
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "reset")){
@@ -183,6 +184,17 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     _m->reset();
   }else if(!strcmp(&cmd, "version")){
     sendResponse("complete", MIROBOT_VERSION, id);
+  }else if(!strcmp(&cmd, "hwversion")){
+    if(!_m->hwVersion.major && !_m->hwVersion.minor){
+      sendResponse("complete", "unknown", id);
+    }else{
+      sprintf(v, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
+      sendResponse("complete", v, id);
+    }
+  }else if(!strcmp(&cmd, "sethwversion")){
+    _m->setHwVersion(arg);
+    sprintf(v, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
+    sendResponse("complete", v, id);
   }else if(!strcmp(&cmd, "pause")){
     _m->pause();
     sendResponse("complete", "", id);

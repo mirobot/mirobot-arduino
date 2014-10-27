@@ -5,6 +5,7 @@
 #include "Arduino.h"
 #include "HotStepper.h"
 #include "CmdProcessor.h"
+#include <EEPROM.h>
 
 #define STEPS_PER_TURN    2048.0
 #define CIRCUMFERENCE_MM  251.3
@@ -17,6 +18,9 @@
 #define STATUS_LED 13
 
 #define MIROBOT_VERSION "20141020"
+
+#define MAGIC_BYTE_1 0xF0
+#define MAGIC_BYTE_2 0x0D
 
 #define SERVO_PIN 3
 #define SERVO_PULSES 15
@@ -33,6 +37,11 @@
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
 
 typedef enum {UP, DOWN} penState_t;
+
+struct HwVersion {
+  byte major;
+  byte minor;
+};
 
 class Mirobot {
   public:
@@ -51,9 +60,11 @@ class Mirobot {
     void follow();
     void collide();
     void beep(int);
+    void setHwVersion(char&);
     boolean ready();
     void setBlocking(boolean val);
     void process();
+    HwVersion hwVersion;
   private:
     void wait();
     void followHandler();
@@ -62,6 +73,7 @@ class Mirobot {
     void servoHandler();
     void autoHandler();
     void checkState();
+    void initHwVersion();
     mainState_t mainState;
     unsigned long lastLedChange;
     boolean blocking;

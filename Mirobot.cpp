@@ -28,6 +28,51 @@ void Mirobot::setup(Stream &s){
   // Set up the ready pin to communicate with the WiFi module
   pinMode(WIFI_READY, INPUT);  //nReady
   penup();
+  initHwVersion();
+}
+
+void Mirobot::initHwVersion(){
+  if(EEPROM.read(0) == MAGIC_BYTE_1 && EEPROM.read(1) == MAGIC_BYTE_2){
+    // We've previously written something valid to the EEPROM
+    hwVersion.major = EEPROM.read(2);
+    hwVersion.minor = EEPROM.read(3);
+  }else{
+    hwVersion.major = 0;
+    hwVersion.minor = 0;
+  }
+}
+
+void Mirobot::setHwVersion(char &version){
+  char v[4];
+  char i;
+  char v_ptr = 0;
+  char *ptr = &version;
+  for(i = 0; i < 9; i++){
+    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
+      v[v_ptr++] = ptr[i];
+    }
+    if(ptr[i] == '.'){
+      v[v_ptr++] = '\0';
+      break;
+    }
+  }
+  hwVersion.major = atoi(v);
+  v_ptr = 0;
+  for(i = i; i < 9; i++){
+    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
+      v[v_ptr++] = ptr[i];
+    }
+    if(ptr[i] == '\0'){
+      v[v_ptr++] = '\0';
+      break;
+    }
+  }
+  v[v_ptr] = '\0';
+  hwVersion.minor = atoi(v);
+  EEPROM.write(0, MAGIC_BYTE_1);
+  EEPROM.write(1, MAGIC_BYTE_2);
+  EEPROM.write(2, hwVersion.major);
+  EEPROM.write(3, hwVersion.minor);
 }
 
 void Mirobot::forward(int distance){
