@@ -31,12 +31,14 @@
 #define LEFT_LINE_SENSOR  A0
 #define RIGHT_LINE_SENSOR A1
 
-#define LEFT_COLLIDE_SENSOR  A2
-#define RIGHT_COLLIDE_SENSOR A3
+#define LEFT_COLLIDE_SENSOR  A3
+#define RIGHT_COLLIDE_SENSOR A2
 
 typedef enum {POWERED_UP, CONNECTED} mainState_t;
 
 typedef enum {UP, DOWN} penState_t;
+
+typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideState_t;
 
 struct HwVersion {
   byte major;
@@ -75,6 +77,7 @@ class Mirobot {
     void checkState();
     void initHwVersion();
     mainState_t mainState;
+    collideState_t collideState;
     unsigned long lastLedChange;
     boolean blocking;
     Mirobot& self() { return *this; }

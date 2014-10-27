@@ -18,6 +18,10 @@ void Mirobot::setup(Stream &s){
   HotStepper::setup(TIMER1INT);
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
+  // Set up the collision sensor inputs and state
+  pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
+  pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
+  collideState = NORMAL;
   setPenState(UP);
   // We will be non-blocking so we can continue to process serial input
   blocking = false;
@@ -186,24 +190,34 @@ void Mirobot::followHandler(){
 }
 
 void Mirobot::collideHandler(){
-  boolean collideLeft = digitalRead(LEFT_COLLIDE_SENSOR);
-  boolean collideRight = digitalRead(RIGHT_COLLIDE_SENSOR);
-  if(collideLeft){
-    motor1.stop();
-    motor2.stop();
-    //turn right
-    back(50);
-    wait();
-    right(90);
-  }else if(collideRight){
-    motor1.stop();
-    motor2.stop();
-    // turn left
-    back(50);
-    wait();
-    right(90);
-  }else{
-    forward(10);
+  boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
+  boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
+  if(collideState == NORMAL){
+    if(collideLeft){
+      Serial.println('l');
+      collideState = LEFT_REVERSE;
+      back(50);
+    }else if(collideRight){
+      Serial.println('r');
+      collideState = RIGHT_REVERSE;
+      back(50);
+    }else{
+      forward(10);
+    }
+  }else if(motor1.ready() && motor2.ready()){
+    switch(collideState){
+      case LEFT_REVERSE :
+        collideState = LEFT_TURN;
+        right(90);
+        break;
+      case RIGHT_REVERSE :
+        collideState = RIGHT_TURN;
+        left(90);
+        break;
+      case LEFT_TURN :
+      case RIGHT_TURN :
+        collideState = NORMAL;
+    }
   }
 }
 
