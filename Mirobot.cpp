@@ -179,12 +179,12 @@ void Mirobot::checkState(){
 void Mirobot::followHandler(){
   if(motor1.ready() && motor2.ready()){
     int diff = analogRead (LEFT_LINE_SENSOR) - analogRead (RIGHT_LINE_SENSOR);
-    if(diff > 100){
-      left(1);
-    }else if(diff < -100){
+    if(diff > 5){
       right(1);
+    }else if(diff < -5){
+      left(1);
     }else{
-      forward(10);
+      forward(5);
     }
   }
 }
