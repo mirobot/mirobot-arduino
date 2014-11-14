@@ -194,11 +194,9 @@ void Mirobot::collideHandler(){
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
   if(collideState == NORMAL){
     if(collideLeft){
-      Serial.println('l');
       collideState = LEFT_REVERSE;
       back(50);
     }else if(collideRight){
-      Serial.println('r');
       collideState = RIGHT_REVERSE;
       back(50);
     }else{
