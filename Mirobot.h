@@ -1,11 +1,9 @@
 #ifndef Mirobot_h
 #define Mirobot_h
 
-#define FROM_LIB
 #include "Arduino.h"
 #include "HotStepper.h"
 #include "CmdProcessor.h"
-#include "HotStepper.h"
 #include <EEPROM.h>
 
 #define STEPS_PER_TURN    2048.0

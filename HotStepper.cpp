@@ -191,5 +191,16 @@ void HotStepper::triggerTop(){
   }
 }
 
+#ifdef HOTSTEPPER_TIMER1
+ISR(TIMER1_COMPA_vect)
+{
+  HotStepper::triggerTop();
+}
+#endif
 
-
+#ifdef HOTSTEPPER_TIMER2
+ISR(TIMER2_COMPA_vect)
+{
+  HotStepper::triggerTop();
+}
+#endif

@@ -1,6 +1,3 @@
-#define HOTSTEPPER_TIMER1
-#include <stdlib.h>
-#include <HotStepper.h>
 #include <Mirobot.h>
 #include <EEPROM.h>
 

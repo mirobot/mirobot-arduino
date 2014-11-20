@@ -11,10 +11,7 @@
 #define TIMER1INT 1
 #define TIMER2INT 2
 
-#ifndef HOTSTEPPER_TIMER1
-  #define HOTSTEPPER_TIMER2
-#endif
-
+#define HOTSTEPPER_TIMER1
 
 class HotStepper {
   public:
@@ -47,21 +44,4 @@ class HotStepper {
     byte unpad(byte, byte);
 };
 
-#ifndef FROM_LIB
-#ifdef HOTSTEPPER_TIMER1
-ISR(TIMER1_COMPA_vect)
-{
-  HotStepper::triggerTop();
-}
 #endif
-
-#ifdef HOTSTEPPER_TIMER2
-ISR(TIMER2_COMPA_vect)
-{
-  HotStepper::triggerTop();
-}
-#endif
-#endif
-
-#endif
-
