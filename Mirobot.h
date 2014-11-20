@@ -47,6 +47,7 @@ struct HwVersion {
 class Mirobot {
   public:
     Mirobot();
+    void setup();
     void setup(Stream &s);
     void forward(int distance);
     void back(int distance);
@@ -63,9 +64,9 @@ class Mirobot {
     void beep(int);
     void setHwVersion(char&);
     boolean ready();
-    void setBlocking(boolean val);
     void process();
     HwVersion hwVersion;
+    boolean blocking;
   private:
     void wait();
     void followHandler();
@@ -78,7 +79,6 @@ class Mirobot {
     mainState_t mainState;
     collideState_t collideState;
     unsigned long lastLedChange;
-    boolean blocking;
     Mirobot& self() { return *this; }
     penState_t penState;
     void setPenState(penState_t);

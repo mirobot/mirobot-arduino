@@ -1,14 +1,11 @@
-#define HOTSTEPPER_TIMER1
-#include <stdlib.h>
-#include <HotStepper.h>
 #include <Mirobot.h>
 #include <EEPROM.h>
-
-Mirobot mirobot;
 
 /*
 This sketch shows how you can program Mirobot directly in the Arduino environment.
 */
+
+Mirobot mirobot;
 
 void setup(){
   mirobot.setup();

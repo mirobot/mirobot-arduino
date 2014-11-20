@@ -14,6 +14,19 @@ Mirobot::Mirobot(){
   lastLedChange = millis();
 }
 
+void Mirobot::setup(){
+  HotStepper::setup(TIMER1INT);
+  // Set up the pen arm servo
+  pinMode(SERVO_PIN, OUTPUT);
+  // Set up the collision sensor inputs and state
+  pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
+  pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
+  collideState = NORMAL;
+  //setPenState(UP);
+  // Set up the status LED
+  pinMode(STATUS_LED, OUTPUT);
+}
+
 void Mirobot::setup(Stream &s){
   HotStepper::setup(TIMER1INT);
   // Set up the pen arm servo
@@ -105,10 +118,12 @@ void Mirobot::right(int angle){
 
 void Mirobot::penup(){
   setPenState(UP);
+  wait();
 }
 
 void Mirobot::pendown(){
   setPenState(DOWN);
+  wait();
 }
 
 void Mirobot::pause(){
@@ -152,13 +167,13 @@ boolean Mirobot::ready(){
   return (motor1.ready() && motor2.ready() && !servo_pulses_left);
 }
 
-void Mirobot::setBlocking(boolean val){
-  blocking = val;
-}
-
 void Mirobot::wait(){
   if(blocking){
-    while(!ready()){}
+    while(!ready()){
+      if(servo_pulses_left){
+        servoHandler();
+      }
+    }
   }
 }
 
