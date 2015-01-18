@@ -3,7 +3,7 @@
 
 HotStepper motor1(&PORTB, 0b00011101);
 HotStepper motor2(&PORTD, 0b11110000);
-CmdProcessor::CmdProcessor p;
+CmdProcessor p;
 
 // Pointer to the bootloader memory location
 void* bl = (void *) 0x3c00;
