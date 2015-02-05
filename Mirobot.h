@@ -69,6 +69,8 @@ class Mirobot {
     void process();
     HwVersion hwVersion;
     boolean blocking;
+    boolean collideNotify;
+    boolean followNotify;
   private:
     void wait();
     void followHandler();
@@ -76,8 +78,11 @@ class Mirobot {
     void ledHandler();
     void servoHandler();
     void autoHandler();
+    void sensorNotifier();
     void checkState();
     void initHwVersion();
+    char lastCollideState;
+    int lastFollowState;
     mainState_t mainState;
     collideState_t _collideState;
     unsigned long lastLedChange;

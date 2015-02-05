@@ -164,9 +164,9 @@ boolean CmdProcessor::processWSFrame(){
 
 
 boolean CmdProcessor::processJSON(){
-  char cmd[13], arg[11], id[11];
+  char cmd[14], arg[11], id[11];
   if(input_buffer_pos > 0 && input_buffer[0] == '{' && input_buffer[input_buffer_pos - 1] == '}'){
-    extractAttr("cmd", input_buffer, cmd, 12);
+    extractAttr("cmd", input_buffer, cmd, 13);
     extractAttr("arg", input_buffer, arg, 10);
     extractAttr("id", input_buffer, id, 10);
     processCmd(*cmd, *arg, *id);
@@ -203,14 +203,30 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     _m->resume();
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "stop")){
+    _m->followNotify = false;
+    _m->collideNotify = false;
     _m->stop();
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "collideState")){
     _m->collideState(*sensorState);
     sendResponse("complete", sensorState, id);
+  }else if(!strcmp(&cmd, "collideNotify")){
+    if(!strcmp(&arg, "false")){
+      _m->collideNotify = false;
+    }else{
+      _m->collideNotify = true;
+    }
+    sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "followState")){
     sprintf(sensorState, "%d", _m->followState());
     sendResponse("complete", sensorState, id);
+  }else if(!strcmp(&cmd, "followNotify")){
+    if(!strcmp(&arg, "false")){
+      _m->followNotify = false;
+    }else{
+      _m->followNotify = true;
+    }
+    sendResponse("complete", "", id);
   }else{
     // It's a command that runs for some time
     if(in_process){
@@ -285,6 +301,15 @@ void CmdProcessor::sendResponse(const char status[], const char msg[], char &id)
   }
 }
 
+void CmdProcessor::collideNotify(const char state[]){
+  sendResponse("notify", state, (char &)"collide");
+}
+
+void CmdProcessor::followNotify(int state){
+  char sensorState[6];
+  sprintf(sensorState, "%d", state);
+  sendResponse("notify", sensorState, (char &)"follow");
+}
 
 //This is a very naive JSON parser which will extract the value of a specific attribute
 void CmdProcessor::extractAttr(const char attr[], char *json, char *output, char len){

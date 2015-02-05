@@ -292,9 +292,35 @@ void Mirobot::autoHandler(){
   }
 }
 
+void Mirobot::sensorNotifier(){
+  if(collideNotify){
+    boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
+    boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
+    char currentCollideState = collideRight & (collideLeft << 1);
+    if(currentCollideState != lastCollideState){
+      if(collideLeft && collideRight){
+        p.collideNotify("both");
+      }else if(collideLeft){
+        p.collideNotify("left");
+      }else if(collideRight){
+        p.collideNotify("right");
+      }
+      lastCollideState = currentCollideState;
+    }
+  }
+  if(followNotify){
+    int currentFollowState = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+    if(currentFollowState != lastFollowState){
+      p.followNotify(currentFollowState);
+    }
+    lastFollowState = currentFollowState;
+  }
+}
+
 void Mirobot::process(){
   ledHandler();
   servoHandler();
   autoHandler();
+  sensorNotifier();
   p.process();
 }

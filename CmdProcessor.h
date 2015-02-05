@@ -29,6 +29,8 @@ class CmdProcessor {
     void addUserCmd(char* cmd, fp_main fn, fp_ready ready);
     void setup(Stream &s, Mirobot &m);
     void process();
+    void collideNotify(const char msg[]);
+    void followNotify(int state);
   private:
     boolean processLine();
     void extractAttr(const char attr[4], char *json, char *output, char len);
