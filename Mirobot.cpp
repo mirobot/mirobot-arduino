@@ -21,7 +21,7 @@ void Mirobot::setup(){
   // Set up the collision sensor inputs and state
   pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
   pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
-  collideState = NORMAL;
+  _collideState = NORMAL;
   //setPenState(UP);
   // Set up the status LED
   pinMode(STATUS_LED, OUTPUT);
@@ -34,7 +34,7 @@ void Mirobot::setup(Stream &s){
   // Set up the collision sensor inputs and state
   pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
   pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
-  collideState = NORMAL;
+  _collideState = NORMAL;
   setPenState(UP);
   // We will be non-blocking so we can continue to process serial input
   blocking = false;
@@ -155,8 +155,26 @@ void Mirobot::follow(){
   following = true;
 }
 
+int Mirobot::followState(){
+  return analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+}
+
 void Mirobot::collide(){
   colliding = true;
+}
+
+void Mirobot::collideState(char &state){
+  boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
+  boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
+  if(collideLeft && collideRight){
+    strcpy(&state, "both");
+  }else if(collideLeft){
+    strcpy(&state, "left");
+  }else if(collideRight){
+    strcpy(&state, "right");
+  }else{
+    strcpy(&state, "none");
+  }
 }
 
 void Mirobot::beep(int duration){
@@ -207,29 +225,29 @@ void Mirobot::followHandler(){
 void Mirobot::collideHandler(){
   boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-  if(collideState == NORMAL){
+  if(_collideState == NORMAL){
     if(collideLeft){
-      collideState = LEFT_REVERSE;
+      _collideState = LEFT_REVERSE;
       back(50);
     }else if(collideRight){
-      collideState = RIGHT_REVERSE;
+      _collideState = RIGHT_REVERSE;
       back(50);
     }else{
       forward(10);
     }
   }else if(motor1.ready() && motor2.ready()){
-    switch(collideState){
+    switch(_collideState){
       case LEFT_REVERSE :
-        collideState = LEFT_TURN;
+        _collideState = LEFT_TURN;
         right(90);
         break;
       case RIGHT_REVERSE :
-        collideState = RIGHT_TURN;
+        _collideState = RIGHT_TURN;
         left(90);
         break;
       case LEFT_TURN :
       case RIGHT_TURN :
-        collideState = NORMAL;
+        _collideState = NORMAL;
     }
   }
 }

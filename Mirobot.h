@@ -60,7 +60,9 @@ class Mirobot {
     void stop();
     void reset();
     void follow();
+    int  followState();
     void collide();
+    void collideState(char &state);
     void beep(int);
     void setHwVersion(char&);
     boolean ready();
@@ -77,7 +79,7 @@ class Mirobot {
     void checkState();
     void initHwVersion();
     mainState_t mainState;
-    collideState_t collideState;
+    collideState_t _collideState;
     unsigned long lastLedChange;
     Mirobot& self() { return *this; }
     penState_t penState;

@@ -177,6 +177,7 @@ boolean CmdProcessor::processJSON(){
 
 void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
   char v[8];
+  char sensorState[6];
   if(!strcmp(&cmd, "ping")){
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "reset")){
@@ -204,6 +205,12 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
   }else if(!strcmp(&cmd, "stop")){
     _m->stop();
     sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "collideState")){
+    _m->collideState(*sensorState);
+    sendResponse("complete", sensorState, id);
+  }else if(!strcmp(&cmd, "followState")){
+    sprintf(sensorState, "%d", _m->followState());
+    sendResponse("complete", sensorState, id);
   }else{
     // It's a command that runs for some time
     if(in_process){
