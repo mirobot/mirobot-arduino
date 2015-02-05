@@ -203,8 +203,6 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     _m->resume();
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "stop")){
-    _m->followNotify = false;
-    _m->collideNotify = false;
     _m->stop();
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "collideState")){
