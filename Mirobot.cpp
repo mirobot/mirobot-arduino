@@ -296,7 +296,7 @@ void Mirobot::sensorNotifier(){
   if(collideNotify){
     boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
     boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-    char currentCollideState = collideRight & (collideLeft << 1);
+    char currentCollideState = collideRight | (collideLeft << 1);
     if(currentCollideState != lastCollideState){
       if(collideLeft && collideRight){
         p.collideNotify("both");
