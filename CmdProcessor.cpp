@@ -48,8 +48,9 @@ void CmdProcessor::process(){
 
 boolean CmdProcessor::processLine(){
   //do a simple check to see if it looks like json
-  if(processJSON()){
+  if(input_buffer_pos > 0 && input_buffer[0] == '{' && input_buffer[input_buffer_pos - 1] == '}'){
     socketMode = RAW;
+    processJSON();
     return true;
   }else if(processHeaders()){
     return true;
