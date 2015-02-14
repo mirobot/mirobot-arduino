@@ -135,7 +135,7 @@ void Mirobot::right(int angle){
 */
 void Mirobot::arc2(int angle, int radius) {
   float inner_circle_radius, outer_circle_radius;
-  float inner_circle_radians, outer_circle_radians;
+  float inner_circle_radian, outer_circle_radian;
   boolean clockwise, smallcircle;
 
   if (angle = 0)  // nothing to do
@@ -180,15 +180,15 @@ void Mirobot::arc2(int angle, int radius) {
   inner_circle_radius = radius - (WHEEL_DISTANCE / 2.0);
   outer_circle_radius = radius + (WHEEL_DISTANCE / 2.0);
 
-  // Now calculate distance required for angle given
-  inner_circle_radians = inner_circle_radius / 0.017453333;
-  outer_circle_radians = outer_circle_radius / 0.017453333;
+  // Now calculate how far one radian is for ecah circle
+  inner_circle_radian = inner_circle_radius / 0.017453333;
+  outer_circle_radian = outer_circle_radius / 0.017453333;
 
   // If circle radius is smaller than distance between pen and wheel,
   // we need to actually run the inner wheel backwards!
-  if (inner_circle_distance < 0) {
+  if (inner_circle_radian < 0) {
     smallcircle = true;
-    inner_circle_distance = abs(inner_circle_distance);
+    inner_circle_radian = abs(inner_circle_radian);
   }
 
   /* Now comes the real tricky bit. It's not the maths but the movement.
@@ -204,12 +204,12 @@ void Mirobot::arc2(int angle, int radius) {
   while (angle-- > 0) {
     // Note: motor1 on right, motor2 on left (reversed so backward moves forwards)
     if (clockwise) {
-      motor1.turn(inner_circle_radians * STEPS_PER_MM, smallcircle ? BACKWARD : FORWARD);
-      motor2.turn(outer_circle_radians * STEPS_PER_MM, BACKWARD);
+      motor1.turn(inner_circle_radian * STEPS_PER_MM, smallcircle ? BACKWARD : FORWARD);
+      motor2.turn(outer_circle_radian * STEPS_PER_MM, BACKWARD);
     }
     else {
-      motor1.turn(outer_circle_radians * STEPS_PER_MM, FORWARD);
-      motor2.turn(inner_circle_radians * STEPS_PER_MM, smallcircle ? FORWARD : BACKWARD);
+      motor1.turn(outer_circle_radian * STEPS_PER_MM, FORWARD);
+      motor2.turn(inner_circle_radian * STEPS_PER_MM, smallcircle ? FORWARD : BACKWARD);
     }
 
     wait();
