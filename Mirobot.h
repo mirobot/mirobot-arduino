@@ -7,10 +7,12 @@
 #include <EEPROM.h>
 
 #define STEPS_PER_TURN    2048.0
-#define CIRCUMFERENCE_MM  251.3
+#define WHEEL_DIAMETER    80.0
+#define CIRCUMFERENCE_MM  251.3		// wheel diameter * pi
 #define STEPS_PER_MM      STEPS_PER_TURN / CIRCUMFERENCE_MM
 #define WHEEL_DISTANCE    126.0
-#define STEPS_PER_DEGREE  ((WHEEL_DISTANCE * 3.1416) / 360) * STEPS_PER_MM
+// when turning, the distance between the wheels is our circle diameter
+#define STEPS_PER_DEGREE  ((WHEEL_DISTANCE * 3.1416) / 360) * STEPS_PER_MM 
 
 #define WIFI_RESET 3
 #define WIFI_READY 2
@@ -53,6 +55,7 @@ class Mirobot {
     void back(int distance);
     void right(int angle);
     void left(int angle);
+    void arc2(int angle, int radius);
     void penup();
     void pendown();
     void pause();

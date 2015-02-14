@@ -116,6 +116,107 @@ void Mirobot::right(int angle){
   wait();
 }
 
+
+/* This ARC2 implementation by arjen@openstem.com.au 2015-02-12
+   Doing ARC2 because the turtle ends up where the pen finishes.
+
+   With ARC, the turtle would stay in the original position
+   (we could achieve his by doing a penup and reversing the motion)
+
+   ARC2 angle radius
+   Draw an arc with an included angle of a degrees and radius of r.
+   However, the turtle ends up at the end of the arc.
+   Example: ARC 45 100
+   Ref: http://derrel.net/ep/logo/logo_com.htm#move
+
+   Draw the arc in counterclockwise direction if radius is positive,
+   otherwise in clockwise direction.
+   Ref: https://docs.python.org/2/library/turtle.html#turtle.circle
+*/
+void Mirobot::arc2(int angle, int radius) {
+  float inner_circle_radius, outer_circle_radius;
+  float inner_circle_radians, outer_circle_radians;
+  boolean clockwise, smallcircle;
+
+  if (angle = 0)  // nothing to do
+     return;
+  angle = abs(angle) % 360; // make it clean rather than error
+
+  // work out whether we're doing clockwise or anticlockwise arc
+  clockwise = radius > 0 ? false : true;
+  radius = abs(radius);
+
+  /* Showing the working, then the shortcuts for the code!
+
+     When drawing a circle with the pen, one turtle wheel will be walking
+     a bigger (outer) circle and the other a smaller (inner) circle.
+
+     Calculate radius of inner/outer circle using known wheel distance:
+       inner_circle_radius = radius - (WHEEL_DISTANCE / 2.0)
+       outer_circle_radius = radius + (WHEEL_DISTANCE / 2.0)
+
+     Now calculate circumference of inner/outer circle: 2r * pi
+       inner_circle_circumference = (2 * inner_circle_radius * 3.1416)
+       outer_circle_circumference = (2 * outer_circle_radius * 3.1416)
+
+     Now calculate distance required for angle given
+       inner_circle_distance = (inner_circle_circumference / 360) * angle
+       outer_circle_distance = (outer_circle_circumference / 360) * angle
+
+     We can shortcut (2 * radius * pi) / 360, because
+     2 * pi / 360 = pi / 180 = 0.017453333
+     This is known as converting degrees to radians: radius / 0.017453333
+
+     An arc of a circle with the same length as the radius of that circle
+     corresponds to an angle of 1 radian. A full circle corresponds to an
+     angle of 2π radians.
+     Ref: https://en.wikipedia.org/wiki/Radian
+
+     So we can say distance = (radius / 0.017453333) * angle
+     and bypass the circumference bit in the middle of our calculation.
+ */
+
+  // Calculate radius of inner/outer circle using known wheel distance
+  inner_circle_radius = radius - (WHEEL_DISTANCE / 2.0);
+  outer_circle_radius = radius + (WHEEL_DISTANCE / 2.0);
+
+  // Now calculate distance required for angle given
+  inner_circle_radians = inner_circle_radius / 0.017453333;
+  outer_circle_radians = outer_circle_radius / 0.017453333;
+
+  // If circle radius is smaller than distance between pen and wheel,
+  // we need to actually run the inner wheel backwards!
+  if (inner_circle_distance < 0) {
+    smallcircle = true;
+    inner_circle_distance = abs(inner_circle_distance);
+  }
+
+  /* Now comes the real tricky bit. It's not the maths but the movement.
+
+     The following code may change as we work out the best way of doing it.
+
+     Ideally we'd make the speed adjustable per stepper, following
+     the inner:outer distance ratio. That'll make it look good!
+
+     For our now we'll just do the arc or circle in radian bits to "fake" it.
+  */
+
+  while (angle-- > 0) {
+    // Note: motor1 on right, motor2 on left (reversed so backward moves forwards)
+    if (clockwise) {
+      motor1.turn(inner_circle_radians * STEPS_PER_MM, smallcircle ? BACKWARD : FORWARD);
+      motor2.turn(outer_circle_radians * STEPS_PER_MM, BACKWARD);
+    }
+    else {
+      motor1.turn(outer_circle_radians * STEPS_PER_MM, FORWARD);
+      motor2.turn(inner_circle_radians * STEPS_PER_MM, smallcircle ? FORWARD : BACKWARD);
+    }
+
+    wait();
+  }
+}
+
+
 void Mirobot::penup(){
   setPenState(UP);
   wait();
