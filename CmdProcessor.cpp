@@ -135,11 +135,6 @@ boolean CmdProcessor::processWSFrame(){
     
     if(input_buffer_pos >= (length + 6)){
       if(length < 125){
-          if(opcode == 0x08){
-            // The socket is closing
-            httpState = WAITING;
-            return true;
-          }
           //extract the mask
           if(mask_set){
             for(char i = 0; i<4; i++){
@@ -152,7 +147,15 @@ boolean CmdProcessor::processWSFrame(){
           }
           input_buffer_pos = length;
           input_buffer[input_buffer_pos] = '\0';
-          processJSON();
+          if(opcode == 0x08){
+            // The socket is closing, we need to send a close frame in response
+            _s->write(0x88);
+            _s->write(0x02);
+            _s->write(0x03);
+            _s->write(0xe9);
+          }else{
+            processJSON();
+          }
           return true;
       }else{
         sendResponse("error", "Message too long", (char&)"");
