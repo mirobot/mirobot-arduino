@@ -337,6 +337,18 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
         _m->collide();
       }else if(!strcmp(&cmd, "beep")){
         _m->beep(atoi(&arg));
+      }else if(!strcmp(&cmd, "arc")){
+        char tmp[6];
+        int angle, radius;
+        char * delim = strchr(&arg, ',');
+        // pull out the angle
+        *delim = 0;
+        strcpy(tmp, &arg);
+        angle = atoi(tmp);
+        // and then the radius
+        strcpy(tmp, delim + 1);
+        radius = atoi(tmp);
+        _m->arc2(angle, radius);
       }else{
         // the command isn't recognised, send an error
         sendResponse("error", "Command not recognised", id);
