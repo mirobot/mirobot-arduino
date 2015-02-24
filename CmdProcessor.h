@@ -12,6 +12,7 @@ class Mirobot;
 typedef enum {EXPECT_ATTR, ATTR, EXPECT_VAL, VAL} parseState_t;
 typedef enum {WAITING, WEBSOCKET_INIT, WEBSOCKET_RESPOND, WEBSOCKET_READY, HTTP_INIT, HTTP_RESPOND, HTTP_READY} httpState_t;
 typedef enum {RAW, HTTP, WEBSOCKET} socketMode_t;
+typedef enum {CLOSED, START, OPENING, READY, RECEIVING, CLOSING, FLUSHING} atState_t;
 
 typedef void (* fp_main) (void *, char *);
 typedef boolean (* fp_ready) (void *);
@@ -46,11 +47,16 @@ class CmdProcessor {
     char input_buffer[INPUT_BUFFER_LENGTH];
     byte input_buffer_pos;
     boolean in_process;
+    atState_t at_cmd_state;
     char current_id[11];
     unsigned long last_char;
     boolean processWSFrame();
     boolean processJSON();
     boolean processHeaders();
+    void startAtCmdReset();
+    void handleAtCmds(char incomingByte);
+    void resetCheck();
+    long resetTimeout;
 };
 
 #endif

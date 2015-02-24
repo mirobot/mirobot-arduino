@@ -5,25 +5,58 @@
 CmdProcessor::CmdProcessor(){
   socketMode = RAW;
   in_process = false;
+  at_cmd_state = CLOSED;
   strcpy(webSocketKey, "------------------------258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
+  resetTimeout = 0;
 }
 
 void CmdProcessor::setup(Stream &s, Mirobot &m){
   httpState = WAITING;
   _s = &s;
   _m = &m;
+  resetCheck();
+}
+
+// This function lets the user press the reset button on the Arduino 3 times to turn the WiFi module access point back on
+void CmdProcessor::resetCheck(){
+  if(MCUSR & _BV(EXTRF)){
+    // Reset was caused by the reset button, so let's increment the eeprom counter
+    byte counter = EEPROM.read(4) + 1;
+    if(counter >= 3){
+      // The reset button has been pressed three times in quick succession so let's reset the WiFi module
+      startAtCmdReset();
+      counter = 0;
+    }
+    EEPROM.write(4, counter);
+    // Set the timeout for 5 seconds
+    resetTimeout = millis() + 5000;
+  }else{
+    // Reset was caused by the power switch, so let's reset the eeprom counter
+    if(EEPROM.read(4) != 0){
+      EEPROM.write(4, 0);
+    }
+  }
+  MCUSR = 0;
 }
 
 void CmdProcessor::process(){
   // check if the previous command is ready
-  if(in_process && _m->ready()){
+  if(in_process && _m->ready() && at_cmd_state == CLOSED){
     in_process = false;
     sendResponse("complete", "", *current_id);
   }
+  // check the reset timeout to make sure the reset button is pressed within 5 seconds
+  if(resetTimeout > 0 && resetTimeout < millis()){
+    resetTimeout = 0;
+    EEPROM.write(4, 0);
+  }
+  // process incoming data
   if (_s->available() > 0){
     last_char = millis();
     char incomingByte = _s->read();
-    if((incomingByte == '\r' || incomingByte == '\n') && processLine()){
+    if(at_cmd_state != CLOSED){
+      handleAtCmds(incomingByte);
+    }else if((incomingByte == '\r' || incomingByte == '\n') && processLine()){
       // It's been successfully processed as a line
       input_buffer_pos = 0;
     }else{
@@ -39,9 +72,58 @@ void CmdProcessor::process(){
       }
     }
   }else{
-    //reset the input buffer if nothing is received for 1 second to avoid things getting messed up
-    if(millis() - last_char >= 1000){
+    //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
+    if(millis() - last_char >= 500){
       input_buffer_pos = 0;
+    }
+  }
+}
+
+void CmdProcessor::startAtCmdReset(){
+  _s->print("+++");
+  at_cmd_state = OPENING;
+}
+
+void CmdProcessor::handleAtCmds(char incomingByte){
+  // process any incoming data as an AT command
+  if(at_cmd_state == OPENING){
+    // we're doing the starting handshake
+    if(incomingByte == 'a'){
+      // respond to the incoming 'a' with our own 'a' after sending the +++
+      _s->print("a");
+    }else{
+      // look for the '+ok' response to say we're in AT mode
+      input_buffer[input_buffer_pos++] = incomingByte;
+      if(input_buffer_pos >= 3){
+        if(!strncmp(input_buffer, "+ok", 3)){
+          at_cmd_state = READY;
+          input_buffer_pos = 0;
+        }else if(!strncmp(input_buffer, "+++", 3)){
+          // It's already open and has just echoed our +++
+          // send a carriage return to flush
+          _s->print("\r\n");
+          at_cmd_state = FLUSHING;
+        }
+      }
+    }
+  }else if(at_cmd_state == READY){
+    // send the AT message we buffered earlier
+    _s->println("AT+WMODE=APSTA");
+    at_cmd_state = RECEIVING;
+  }else if(at_cmd_state == RECEIVING){
+    if((incomingByte == '\r' || incomingByte == '\n') && input_buffer_pos > 0){
+      // we've received a line
+      if(!strncmp(input_buffer, "+ok", 3)){
+        _s->println("AT+Z");
+        at_cmd_state = CLOSED;
+      }
+      input_buffer_pos = 0;
+    }else{
+      input_buffer[input_buffer_pos++] = incomingByte;
+    }
+  }else if(at_cmd_state == FLUSHING){
+    if((incomingByte == '\r' || incomingByte == '\n')){
+      at_cmd_state = READY;
     }
   }
 }
