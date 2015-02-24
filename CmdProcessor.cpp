@@ -396,10 +396,17 @@ void CmdProcessor::followNotify(int state){
 }
 
 //This is a very naive JSON parser which will extract the value of a specific attribute
+//It puts a string into the output buffer. Examples of extracting attr:
+//  {"attr":"one"} => "one"
+//  {"attr":1}     => "1"
+//  {"attr":[1, 2]} => "1,2"
+//  {"attr":["one",2] "one,2"
 void CmdProcessor::extractAttr(const char attr[], char *json, char *output, char len){
   parseState_t parseState = EXPECT_ATTR;
   char attrPos = 0;
   boolean match = false;
+  boolean in_brackets = false;
+  boolean in_quotes = false;
   
   while(*json != '\0'){
     switch(parseState){
@@ -411,7 +418,11 @@ void CmdProcessor::extractAttr(const char attr[], char *json, char *output, char
         break;
       case ATTR:
         if(*json == '"'){
-          parseState = EXPECT_VAL;
+          *json++;
+          while((*json == ':' || *json == ' ') && *json != '\0'){
+            *json++;
+          }
+          parseState = VAL;
         }else{
           //check the attribute
           if(attr[attrPos] == *json){
@@ -420,15 +431,19 @@ void CmdProcessor::extractAttr(const char attr[], char *json, char *output, char
               match = true;
             }
           }
+          break;
         }
-        break;
-      case EXPECT_VAL:
-        if(*json == '"'){
-          parseState = VAL;
-        }
-        break;
       case VAL:
-        if(*json == '"'){
+        if(!in_quotes && !in_brackets && *json == '['){
+          in_brackets = true;
+        }else if(!in_quotes && *json == '"'){
+          in_quotes = true;
+        }else if(!in_quotes && in_brackets && *json == ']'){
+          in_brackets = false;
+        }else if(in_quotes && *json == '"'){
+          in_quotes = false;
+        }else if(!in_quotes && in_brackets && *json == ' '){
+        }else if(!in_quotes && !in_brackets && (*json == ',' || *json == ' ' || *json == '}')){
           if(match){
             *output = '\0';
             return;
@@ -448,7 +463,6 @@ void CmdProcessor::extractAttr(const char attr[], char *json, char *output, char
         }
         break;
     }
-        
     *json++;
   }
 }

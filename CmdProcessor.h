@@ -9,7 +9,7 @@ class Mirobot;
 
 #define INPUT_BUFFER_LENGTH 180
 
-typedef enum {EXPECT_ATTR, ATTR, EXPECT_VAL, VAL} parseState_t;
+typedef enum {EXPECT_ATTR, ATTR, DELIM, VAL} parseState_t;
 typedef enum {WAITING, WEBSOCKET_INIT, WEBSOCKET_RESPOND, WEBSOCKET_READY, HTTP_INIT, HTTP_RESPOND, HTTP_READY} httpState_t;
 typedef enum {RAW, HTTP, WEBSOCKET} socketMode_t;
 typedef enum {CLOSED, START, OPENING, READY, RECEIVING, CLOSING, FLUSHING} atState_t;
