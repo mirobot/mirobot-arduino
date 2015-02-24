@@ -61,8 +61,8 @@ void Mirobot::initHwVersion(){
 
 void Mirobot::setHwVersion(char &version){
   char v[4];
-  char i;
-  char v_ptr = 0;
+  int i;
+  int v_ptr = 0;
   char *ptr = &version;
   for(i = 0; i < 9; i++){
     if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
@@ -248,6 +248,8 @@ void Mirobot::collideHandler(){
       case LEFT_TURN :
       case RIGHT_TURN :
         _collideState = NORMAL;
+      case NORMAL :
+        break;
     }
   }
 }
