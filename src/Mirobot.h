@@ -2,8 +2,8 @@
 #define Mirobot_h
 
 #include "Arduino.h"
-#include "HotStepper.h"
-#include "CmdProcessor.h"
+#include "lib/HotStepper.h"
+#include "lib/CmdProcessor.h"
 #include <EEPROM.h>
 
 #define STEPS_PER_TURN    2048.0
@@ -16,7 +16,7 @@
 #define WIFI_READY 2
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "20150226"
+#define MIROBOT_VERSION "2.0.0"
 
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
