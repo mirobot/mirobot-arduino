@@ -12,6 +12,7 @@ Mirobot::Mirobot(){
   blocking = true;
   mainState = POWERED_UP;
   lastLedChange = millis();
+  version(2);
 }
 
 void Mirobot::setup(){
@@ -93,26 +94,26 @@ void Mirobot::setHwVersion(char &version){
 }
 
 void Mirobot::forward(int distance){
-  motor1.turn(distance * STEPS_PER_MM, FORWARD);
-  motor2.turn(distance * STEPS_PER_MM, BACKWARD);
+  motor1.turn(distance * steps_per_mm, FORWARD);
+  motor2.turn(distance * steps_per_mm, BACKWARD);
   wait();
 }
 
 void Mirobot::back(int distance){
-  motor1.turn(distance * STEPS_PER_MM, BACKWARD);
-  motor2.turn(distance * STEPS_PER_MM, FORWARD);
+  motor1.turn(distance * steps_per_mm, BACKWARD);
+  motor2.turn(distance * steps_per_mm, FORWARD);
   wait();
 }
 
 void Mirobot::left(int angle){
-  motor1.turn(angle * STEPS_PER_DEGREE, FORWARD);
-  motor2.turn(angle * STEPS_PER_DEGREE, FORWARD);
+  motor1.turn(angle * steps_per_degree, FORWARD);
+  motor2.turn(angle * steps_per_degree, FORWARD);
   wait();
 }
 
 void Mirobot::right(int angle){
-  motor1.turn(angle * STEPS_PER_DEGREE, BACKWARD);
-  motor2.turn(angle * STEPS_PER_DEGREE, BACKWARD);
+  motor1.turn(angle * steps_per_degree, BACKWARD);
+  motor2.turn(angle * steps_per_degree, BACKWARD);
   wait();
 }
 
@@ -275,11 +276,11 @@ void Mirobot::servoHandler(){
       servo_pulses_left--;
       digitalWrite(SERVO_PIN, HIGH);
       if(penState == UP){
-        next_servo_pulse = micros() + 10800;
-        delayMicroseconds(1200);
+        next_servo_pulse = micros() + (12000 - penup_delay);
+        delayMicroseconds(penup_delay);
       }else{
-        next_servo_pulse = micros() + 10000;
-        delayMicroseconds(2000);
+        next_servo_pulse = micros() + (12000 - pendown_delay);
+        delayMicroseconds(pendown_delay);
       }
       digitalWrite(SERVO_PIN, LOW);
     } 
@@ -316,6 +317,21 @@ void Mirobot::sensorNotifier(){
       p.followNotify(currentFollowState);
     }
     lastFollowState = currentFollowState;
+  }
+}
+
+// This allows for runtime configuration of which hardware is used
+void Mirobot::version(char v){
+  if(v == 1){
+    steps_per_mm = STEPS_PER_MM_V1;
+    steps_per_degree = STEPS_PER_DEGREE_V1;
+    penup_delay = PENUP_DELAY_V1;
+    pendown_delay = PENDOWN_DELAY_V1;
+  }else if(v == 2){
+    steps_per_mm = STEPS_PER_MM_V2;
+    steps_per_degree = STEPS_PER_DEGREE_V2;
+    penup_delay = PENUP_DELAY_V2;
+    pendown_delay = PENDOWN_DELAY_V2;
   }
 }
 

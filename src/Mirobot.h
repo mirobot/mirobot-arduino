@@ -7,16 +7,27 @@
 #include <EEPROM.h>
 
 #define STEPS_PER_TURN    2048.0
-#define CIRCUMFERENCE_MM  251.3
-#define STEPS_PER_MM      STEPS_PER_TURN / CIRCUMFERENCE_MM
-#define WHEEL_DISTANCE    126.0
-#define STEPS_PER_DEGREE  ((WHEEL_DISTANCE * 3.1416) / 360) * STEPS_PER_MM
+
+#define CIRCUMFERENCE_MM_V1  251.3
+#define WHEEL_DISTANCE_V1    126.0
+#define PENUP_DELAY_V1 1200
+#define PENDOWN_DELAY_V1 2000
+
+#define CIRCUMFERENCE_MM_V2  256
+#define WHEEL_DISTANCE_V2    121.0
+#define PENUP_DELAY_V2 2000
+#define PENDOWN_DELAY_V2 1000
+
+#define STEPS_PER_MM_V1      STEPS_PER_TURN / CIRCUMFERENCE_MM_V1
+#define STEPS_PER_DEGREE_V1  ((WHEEL_DISTANCE_V1 * 3.1416) / 360) * STEPS_PER_MM_V1
+#define STEPS_PER_MM_V2      STEPS_PER_TURN / CIRCUMFERENCE_MM_V2
+#define STEPS_PER_DEGREE_V2  ((WHEEL_DISTANCE_V2 * 3.1416) / 360) * STEPS_PER_MM_V2
 
 #define WIFI_RESET 3
 #define WIFI_READY 2
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "2.0.0"
+#define MIROBOT_VERSION "2.0.1"
 
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
@@ -71,6 +82,7 @@ class Mirobot {
     boolean blocking;
     boolean collideNotify;
     boolean followNotify;
+    void version(char);
   private:
     void wait();
     void followHandler();
@@ -94,6 +106,10 @@ class Mirobot {
     boolean paused;
     boolean following;
     boolean colliding;
+    int steps_per_mm;
+    int steps_per_degree;
+    int penup_delay;
+    int pendown_delay;
 };
 
 #endif
