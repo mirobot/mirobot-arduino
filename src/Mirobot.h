@@ -23,11 +23,9 @@
 #define STEPS_PER_MM_V2      STEPS_PER_TURN / CIRCUMFERENCE_MM_V2
 #define STEPS_PER_DEGREE_V2  ((WHEEL_DISTANCE_V2 * 3.1416) / 360) * STEPS_PER_MM_V2
 
-#define WIFI_RESET 3
-#define WIFI_READY 2
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "2.0.1"
+#define MIROBOT_VERSION "2.0.2"
 
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
@@ -43,8 +41,6 @@
 
 #define LEFT_COLLIDE_SENSOR  A3
 #define RIGHT_COLLIDE_SENSOR A2
-
-typedef enum {POWERED_UP, CONNECTED} mainState_t;
 
 typedef enum {UP, DOWN} penState_t;
 
@@ -95,7 +91,6 @@ class Mirobot {
     void initHwVersion();
     char lastCollideState;
     int lastFollowState;
-    mainState_t mainState;
     collideState_t _collideState;
     unsigned long lastLedChange;
     Mirobot& self() { return *this; }

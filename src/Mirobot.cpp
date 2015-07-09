@@ -10,7 +10,6 @@ void* bl = (void *) 0x3c00;
 
 Mirobot::Mirobot(){
   blocking = true;
-  mainState = POWERED_UP;
   lastLedChange = millis();
   version(2);
 }
@@ -43,8 +42,6 @@ void Mirobot::setup(Stream &s){
   p.setup(s, self());
   // Set up the status LED
   pinMode(STATUS_LED, OUTPUT);
-  // Set up the ready pin to communicate with the WiFi module
-  pinMode(WIFI_READY, INPUT);  //nReady
   penup();
   initHwVersion();
 }
@@ -202,14 +199,6 @@ void Mirobot::setPenState(penState_t state){
   next_servo_pulse = 0;
 }
 
-void Mirobot::checkState(){
-  if(!digitalRead(WIFI_READY)){
-    mainState = CONNECTED;
-  }else{
-    mainState = POWERED_UP;
-  }
-}
-
 void Mirobot::followHandler(){
   if(motor1.ready() && motor2.ready()){
     int diff = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
@@ -256,18 +245,8 @@ void Mirobot::collideHandler(){
 }
 
 void Mirobot::ledHandler(){
-  checkState();
-  switch(mainState){
-    case POWERED_UP:
-      if(millis() - lastLedChange > 250){
-        lastLedChange = millis();
-        digitalWrite(STATUS_LED, !digitalRead(STATUS_LED));
-      }
-      break;
-    case CONNECTED:
-      digitalWrite(STATUS_LED, HIGH);
-      break;
-  }
+  long t = millis();
+  digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
 }
 
 void Mirobot::servoHandler(){
