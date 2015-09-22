@@ -96,6 +96,7 @@ class Mirobot {
     Mirobot& self() { return *this; }
     penState_t penState;
     void setPenState(penState_t);
+    void takeUpSlack(byte, byte);
     unsigned long next_servo_pulse;
     unsigned char servo_pulses_left;
     boolean paused;
@@ -105,6 +106,7 @@ class Mirobot {
     int steps_per_degree;
     int penup_delay;
     int pendown_delay;
+    int slackSteps;
 };
 
 #endif

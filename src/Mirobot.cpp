@@ -11,6 +11,7 @@ void* bl = (void *) 0x3c00;
 Mirobot::Mirobot(){
   blocking = true;
   lastLedChange = millis();
+  slackSteps = 14;
   version(2);
 }
 
@@ -90,25 +91,41 @@ void Mirobot::setHwVersion(char &version){
   EEPROM.write(3, hwVersion.minor);
 }
 
+void Mirobot::takeUpSlack(byte motor1Dir, byte motor2Dir){
+  // Take up the slack on each motor
+  if(motor1.lastDirection != motor1Dir){
+    motor1.turn(slackSteps, motor1Dir);
+  }
+  if(motor2.lastDirection != motor2Dir){
+    motor2.turn(slackSteps, motor2Dir);
+  }
+  // Wait until the motors have taken up the slack
+  while(!motor1.ready() && !motor2.ready()){}
+}
+
 void Mirobot::forward(int distance){
+  takeUpSlack(FORWARD, BACKWARD);
   motor1.turn(distance * steps_per_mm, FORWARD);
   motor2.turn(distance * steps_per_mm, BACKWARD);
   wait();
 }
 
 void Mirobot::back(int distance){
+  takeUpSlack(BACKWARD, FORWARD);
   motor1.turn(distance * steps_per_mm, BACKWARD);
   motor2.turn(distance * steps_per_mm, FORWARD);
   wait();
 }
 
 void Mirobot::left(int angle){
+  takeUpSlack(FORWARD, FORWARD);
   motor1.turn(angle * steps_per_degree, FORWARD);
   motor2.turn(angle * steps_per_degree, FORWARD);
   wait();
 }
 
 void Mirobot::right(int angle){
+  takeUpSlack(BACKWARD, BACKWARD);
   motor1.turn(angle * steps_per_degree, BACKWARD);
   motor2.turn(angle * steps_per_degree, BACKWARD);
   wait();

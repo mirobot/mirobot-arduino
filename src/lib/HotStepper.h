@@ -27,6 +27,7 @@ class HotStepper {
     void pause();
     void resume();
     void stop();
+    byte lastDirection;
   private:
     static HotStepper *firstInstance;
     HotStepper *nextInstance;

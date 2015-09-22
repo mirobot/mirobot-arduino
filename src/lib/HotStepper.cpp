@@ -94,6 +94,7 @@ void HotStepper::stop(){
 void HotStepper::turn(long steps, byte direction){
   _remaining = steps;
   _dir = direction;
+  lastDirection = direction;
 }
 
 boolean HotStepper::ready(){
