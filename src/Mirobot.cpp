@@ -12,6 +12,7 @@ Mirobot::Mirobot(){
   blocking = true;
   lastLedChange = millis();
   slackSteps = 14;
+  beepComplete = 0;
   version(2);
 }
 
@@ -194,10 +195,11 @@ void Mirobot::collideState(char &state){
 
 void Mirobot::beep(int duration){
   tone(SPEAKER_PIN, NOTE_C4, duration);
+  beepComplete = millis() + duration;
 }
 
 boolean Mirobot::ready(){
-  return (motor1.ready() && motor2.ready() && !servo_pulses_left);
+  return (motor1.ready() && motor2.ready() && !servo_pulses_left && beepComplete < millis());
 }
 
 void Mirobot::wait(){

@@ -107,6 +107,7 @@ class Mirobot {
     int penup_delay;
     int pendown_delay;
     int slackSteps;
+    long beepComplete;
 };
 
 #endif
