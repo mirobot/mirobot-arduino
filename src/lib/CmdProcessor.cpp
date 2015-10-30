@@ -262,8 +262,8 @@ boolean CmdProcessor::processJSON(){
 }
 
 void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
-  char v[8];
-  char sensorState[6];
+  char tmpBuff[8];
+
   if(!strcmp(&cmd, "ping")){
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "reset")){
@@ -275,13 +275,13 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     if(!_m->hwVersion.major && !_m->hwVersion.minor){
       sendResponse("complete", "unknown", id);
     }else{
-      sprintf(v, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
-      sendResponse("complete", v, id);
+      sprintf(tmpBuff, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
+      sendResponse("complete", tmpBuff, id);
     }
   }else if(!strcmp(&cmd, "sethwversion")){
     _m->setHwVersion(arg);
-    sprintf(v, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
-    sendResponse("complete", v, id);
+    sprintf(tmpBuff, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
+    sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "pause")){
     _m->pause();
     sendResponse("complete", "", id);
@@ -292,8 +292,8 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     _m->stop();
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "collideState")){
-    _m->collideState(*sensorState);
-    sendResponse("complete", sensorState, id);
+    _m->collideState(*tmpBuff);
+    sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "collideNotify")){
     if(!strcmp(&arg, "false")){
       _m->collideNotify = false;
@@ -302,8 +302,8 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     }
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "followState")){
-    sprintf(sensorState, "%d", _m->followState());
-    sendResponse("complete", sensorState, id);
+    sprintf(tmpBuff, "%d", _m->followState());
+    sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "followNotify")){
     if(!strcmp(&arg, "false")){
       _m->followNotify = false;
