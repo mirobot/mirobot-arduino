@@ -311,6 +311,21 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
       _m->followNotify = true;
     }
     sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "slackCalibration")){
+    sprintf(tmpBuff, "%d", _m->slackCalibration);
+    sendResponse("complete", tmpBuff, id);
+  }else if(!strcmp(&cmd, "moveCalibration")){
+    sprintf(tmpBuff, "%d", _m->moveCalibration);
+    sendResponse("complete", tmpBuff, id);
+  }else if(!strcmp(&cmd, "turnCalibration")){
+    sprintf(tmpBuff, "%d", _m->turnCalibration);
+    sendResponse("complete", tmpBuff, id);
+  }else if(!strcmp(&cmd, "calibrateMove")){
+    _m->calibrateMove(atof(&arg));
+    sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "calibrateTurn")){
+    _m->calibrateTurn(atof(&arg));
+    sendResponse("complete", "", id);
   }else{
     // It's a command that runs for some time
     if(in_process){
@@ -337,6 +352,8 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
         _m->collide();
       }else if(!strcmp(&cmd, "beep")){
         _m->beep(atoi(&arg));
+      }else if(!strcmp(&cmd, "calibrateSlack")){
+        _m->calibrateSlack(atoi(&arg));
       }else{
         // the command isn't recognised, send an error
         sendResponse("error", "Command not recognised", id);

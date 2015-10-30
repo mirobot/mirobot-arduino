@@ -74,11 +74,17 @@ class Mirobot {
     void setHwVersion(char&);
     boolean ready();
     void process();
+    void version(char);
+    void calibrateSlack(int);
+    void calibrateMove(float);
+    void calibrateTurn(float);
+    int slackCalibration;
+    int moveCalibration;
+    int turnCalibration;
     HwVersion hwVersion;
     boolean blocking;
     boolean collideNotify;
     boolean followNotify;
-    void version(char);
   private:
     void wait();
     void followHandler();
@@ -97,6 +103,7 @@ class Mirobot {
     penState_t penState;
     void setPenState(penState_t);
     void takeUpSlack(byte, byte);
+    void calibrateHandler();
     unsigned long next_servo_pulse;
     unsigned char servo_pulses_left;
     boolean paused;
@@ -106,8 +113,8 @@ class Mirobot {
     int steps_per_degree;
     int penup_delay;
     int pendown_delay;
-    int slackSteps;
     long beepComplete;
+    boolean calibratingSlack;
 };
 
 #endif
