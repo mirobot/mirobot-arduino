@@ -78,6 +78,7 @@ class Mirobot {
     void calibrateSlack(int);
     void calibrateMove(float);
     void calibrateTurn(float);
+    char versionNum;
     int slackCalibration;
     int moveCalibration;
     int turnCalibration;

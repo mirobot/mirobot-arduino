@@ -226,9 +226,17 @@ void Mirobot::followHandler(){
   if(motor1.ready() && motor2.ready()){
     int diff = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
     if(diff > 5){
-      right(1);
+      if(versionNum == 1){
+        right(1);
+      }else if(versionNum == 2){
+        left(1);
+      }
     }else if(diff < -5){
-      left(1);
+      if(versionNum == 1){
+        left(1);
+      }else if(versionNum == 2){
+        right(1);
+      }
     }else{
       forward(5);
     }
@@ -324,6 +332,7 @@ void Mirobot::sensorNotifier(){
 
 // This allows for runtime configuration of which hardware is used
 void Mirobot::version(char v){
+  versionNum = v;
   if(v == 1){
     steps_per_mm = STEPS_PER_MM_V1;
     steps_per_degree = STEPS_PER_DEGREE_V1;
