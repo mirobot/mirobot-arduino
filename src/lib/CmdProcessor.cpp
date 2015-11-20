@@ -8,6 +8,7 @@ CmdProcessor::CmdProcessor(){
   at_cmd_state = CLOSED;
   strcpy(webSocketKey, "------------------------258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
   resetTimeout = 0;
+  current_id[0] = 0;
 }
 
 void CmdProcessor::setup(Stream &s, Mirobot &m){
