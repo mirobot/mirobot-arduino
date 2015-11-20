@@ -267,6 +267,9 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
 
   if(!strcmp(&cmd, "ping")){
     sendResponse("complete", "", id);
+  }else if(!strcmp(&cmd, "uptime")){
+    sprintf(tmpBuff, "%lu", millis());
+    sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "reset")){
     sendResponse("complete", "", id);
     _m->reset();
