@@ -250,9 +250,9 @@ boolean CmdProcessor::processWSFrame(){
 
 
 boolean CmdProcessor::processJSON(){
-  char cmd[14], arg[11], id[11];
+  char cmd[20], arg[11], id[11];
   if(input_buffer_pos > 0 && input_buffer[0] == '{' && input_buffer[input_buffer_pos - 1] == '}'){
-    extractAttr("cmd", input_buffer, cmd, 13);
+    extractAttr("cmd", input_buffer, cmd, 20);
     extractAttr("arg", input_buffer, arg, 10);
     extractAttr("id", input_buffer, id, 10);
     processCmd(*cmd, *arg, *id);
@@ -262,7 +262,7 @@ boolean CmdProcessor::processJSON(){
 }
 
 void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
-  char tmpBuff[8];
+  char tmpBuff[10];
 
   if(!strcmp(&cmd, "ping")){
     sendResponse("complete", "", id);
@@ -272,15 +272,15 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
   }else if(!strcmp(&cmd, "version")){
     sendResponse("complete", MIROBOT_VERSION, id);
   }else if(!strcmp(&cmd, "hwversion")){
-    if(!_m->hwVersion.major && !_m->hwVersion.minor){
+    if(!_m->settings.hwmajor && !_m->settings.hwminor){
       sendResponse("complete", "unknown", id);
     }else{
-      sprintf(tmpBuff, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
+      sprintf(tmpBuff, "%d.%d", _m->settings.hwmajor, _m->settings.hwminor);
       sendResponse("complete", tmpBuff, id);
     }
   }else if(!strcmp(&cmd, "sethwversion")){
     _m->setHwVersion(arg);
-    sprintf(tmpBuff, "%d.%d", _m->hwVersion.major, _m->hwVersion.minor);
+    sprintf(tmpBuff, "%d.%d", _m->settings.hwmajor, _m->settings.hwminor);
     sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "pause")){
     _m->pause();
@@ -312,13 +312,15 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     }
     sendResponse("complete", "", id);
   }else if(!strcmp(&cmd, "slackCalibration")){
-    sprintf(tmpBuff, "%d", _m->slackCalibration);
+    sprintf(tmpBuff, "%d", _m->settings.slackCalibration);
     sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "moveCalibration")){
-    sprintf(tmpBuff, "%d", _m->moveCalibration);
+    dtostrf(_m->settings.moveCalibration , 2, 6, tmpBuff);
+    //sprintf(tmpBuff, "%f", _m->settings.moveCalibration);
     sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "turnCalibration")){
-    sprintf(tmpBuff, "%d", _m->turnCalibration);
+    dtostrf(_m->settings.turnCalibration , 2, 6, tmpBuff);
+    //sprintf(tmpBuff, "%f", _m->settings.turnCalibration);
     sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "calibrateMove")){
     _m->calibrateMove(atof(&arg));

@@ -25,8 +25,9 @@
 
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "2.0.3"
+#define MIROBOT_VERSION "2.0.4"
 
+#define EEPROM_OFFSET 16
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
 
@@ -46,9 +47,12 @@ typedef enum {UP, DOWN} penState_t;
 
 typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideState_t;
 
-struct HwVersion {
-  byte major;
-  byte minor;
+struct Settings {
+  byte         hwmajor;
+  byte         hwminor;
+  unsigned int slackCalibration;
+  float        moveCalibration;
+  float        turnCalibration;
 };
 
 class Mirobot {
@@ -75,14 +79,11 @@ class Mirobot {
     boolean ready();
     void process();
     void version(char);
-    void calibrateSlack(int);
+    void calibrateSlack(unsigned int);
     void calibrateMove(float);
     void calibrateTurn(float);
     char versionNum;
-    int slackCalibration;
-    int moveCalibration;
-    int turnCalibration;
-    HwVersion hwVersion;
+    Settings settings;
     boolean blocking;
     boolean collideNotify;
     boolean followNotify;
@@ -95,7 +96,8 @@ class Mirobot {
     void autoHandler();
     void sensorNotifier();
     void checkState();
-    void initHwVersion();
+    void initSettings();
+    void saveSettings();
     char lastCollideState;
     int lastFollowState;
     collideState_t _collideState;
