@@ -6,15 +6,15 @@
 #include "lib/CmdProcessor.h"
 #include <EEPROM.h>
 
-#define STEPS_PER_TURN    2048.0
+#define STEPS_PER_TURN    2048.0f
 
-#define CIRCUMFERENCE_MM_V1  251.3
-#define WHEEL_DISTANCE_V1    126.0
+#define CIRCUMFERENCE_MM_V1  251.3f
+#define WHEEL_DISTANCE_V1    126.0f
 #define PENUP_DELAY_V1 1200
 #define PENDOWN_DELAY_V1 2000
 
-#define CIRCUMFERENCE_MM_V2  256
-#define WHEEL_DISTANCE_V2    121.0
+#define CIRCUMFERENCE_MM_V2  256.0f
+#define WHEEL_DISTANCE_V2    120.0f
 #define PENUP_DELAY_V2 2000
 #define PENDOWN_DELAY_V2 1000
 
@@ -25,7 +25,7 @@
 
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "2.0.4"
+#define MIROBOT_VERSION "2.0.5"
 
 #define EEPROM_OFFSET 16
 #define MAGIC_BYTE_1 0xF0
@@ -112,8 +112,8 @@ class Mirobot {
     boolean paused;
     boolean following;
     boolean colliding;
-    int steps_per_mm;
-    int steps_per_degree;
+    float steps_per_mm;
+    float steps_per_degree;
     int penup_delay;
     int pendown_delay;
     long beepComplete;
