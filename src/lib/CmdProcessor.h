@@ -17,13 +17,6 @@ typedef enum {CLOSED, START, OPENING, READY, RECEIVING, CLOSING, FLUSHING} atSta
 typedef void (* fp_main) (void *, char *);
 typedef boolean (* fp_ready) (void *);
 
-struct UserCmd {
-  const char *cmd;
-  byte type;
-  fp_main fn_main;
-  fp_ready fn_ready;
-};
-
 class CmdProcessor {
   public:
     CmdProcessor();

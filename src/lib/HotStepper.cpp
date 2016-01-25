@@ -1,6 +1,7 @@
 // Version 72503c42 from github.com/bjpirt/HotStepper
 
 #define FROM_LIB
+#ifdef AVR
 #include "Arduino.h"
 #include "HotStepper.h"
 
@@ -204,4 +205,5 @@ ISR(TIMER2_COMPA_vect)
 {
   HotStepper::triggerTop();
 }
+#endif
 #endif

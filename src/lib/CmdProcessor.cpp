@@ -20,6 +20,7 @@ void CmdProcessor::setup(Stream &s, Mirobot &m){
 
 // This function lets the user press the reset button on the Arduino 3 times to turn the WiFi module access point back on
 void CmdProcessor::resetCheck(){
+#ifdef AVR
   if(MCUSR & _BV(EXTRF)){
     // Reset was caused by the reset button, so let's increment the eeprom counter
     byte counter = EEPROM.read(4) + 1;
@@ -38,6 +39,7 @@ void CmdProcessor::resetCheck(){
     }
   }
   MCUSR = 0;
+#endif
 }
 
 void CmdProcessor::process(){
@@ -46,11 +48,13 @@ void CmdProcessor::process(){
     in_process = false;
     sendResponse("complete", "", *current_id);
   }
+#ifdef AVR
   // check the reset timeout to make sure the reset button is pressed within 5 seconds
   if(resetTimeout > 0 && resetTimeout < millis()){
     resetTimeout = 0;
     EEPROM.write(4, 0);
   }
+#endif
   // process incoming data
   if (_s->available() > 0){
     last_char = millis();

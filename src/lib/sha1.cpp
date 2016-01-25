@@ -1,6 +1,8 @@
 #include <string.h>
+#ifdef AVR
 #include <avr/io.h>
 #include <avr/pgmspace.h>
+#endif
 #include "sha1.h"
 
 #define SHA1_K0 0x5a827999
