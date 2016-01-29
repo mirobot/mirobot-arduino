@@ -71,192 +71,143 @@ void Mirobot::setupCmds(){
   manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack);
 }
 
+CmdResult getCmdResult(const char msg[], bool imm){
+  CmdResult res;
+  res.immediate = imm;
+  res.msg = msg;
+  return res;
+}
+
 CmdResult Mirobot::_version(char &arg){
-  CmdResult result;
-  result.msg = MIROBOT_VERSION;
-  result.immediate = true;
-  return result;
+  return getCmdResult(MIROBOT_VERSION, true);
 }
 
 CmdResult Mirobot::_ping(char &arg){
-  CmdResult result;
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_uptime(char &arg){
-  CmdResult result;
   sprintf(tmpBuff, "%lu", millis());
-  result.msg = tmpBuff;
-  result.immediate = true;
-  return result;
+  return getCmdResult(tmpBuff, true);
 }
 
 CmdResult Mirobot::_pause(char &arg){
-  CmdResult result;
   pause();
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_resume(char &arg){
-  CmdResult result;
   resume();
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_stop(char &arg){
-  CmdResult result;
   stop();
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_collideState(char &arg){
   CmdResult result;
   collideState(*tmpBuff);
-  result.msg = tmpBuff;
-  result.immediate = true;
-  return result;
+  return getCmdResult(tmpBuff, true);
 }
 
 CmdResult Mirobot::_collideNotify(char &arg){
-  CmdResult result;
   if(!strcmp(&arg, "false")){
     collideNotify = false;
   }else{
     collideNotify = true;
   }
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_followState(char &arg){
-  CmdResult result;
   sprintf(tmpBuff, "%d", followState());
-  result.msg = tmpBuff;
-  result.immediate = true;
-  return result;
+  return getCmdResult(tmpBuff, true);
 }
 
 CmdResult Mirobot::_followNotify(char &arg){
-  CmdResult result;
   if(!strcmp(&arg, "false")){
     followNotify = false;
   }else{
     followNotify = true;
   }
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_slackCalibration(char &arg){
-  CmdResult result;
   sprintf(tmpBuff, "%d", settings.slackCalibration);
-  result.msg = tmpBuff;
-  result.immediate = true;
-  return result;
+  return getCmdResult(tmpBuff, true);
 }
 
 CmdResult Mirobot::_moveCalibration(char &arg){
-  CmdResult result;
   dtostrf(settings.moveCalibration , 2, 6, tmpBuff);
-  result.msg = tmpBuff;
-  result.immediate = true;
-  return result;
+  return getCmdResult(tmpBuff, true);
 }
 
 CmdResult Mirobot::_turnCalibration(char &arg){
-  CmdResult result;
   dtostrf(settings.turnCalibration , 2, 6, tmpBuff);
-  result.msg = tmpBuff;
-  result.immediate = true;
-  return result;
+  return getCmdResult(tmpBuff, true);
 }
 
 CmdResult Mirobot::_calibrateMove(char &arg){
-  CmdResult result;
   calibrateMove(atof(&arg));
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_calibrateTurn(char &arg){
-  CmdResult result;
   calibrateTurn(atof(&arg));
-  result.immediate = true;
-  return result;
+  return getCmdResult("", true);
 }
 
 CmdResult Mirobot::_forward(char &arg){
-  CmdResult result;
   forward(atoi(&arg));
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_back(char &arg){
-  CmdResult result;
   back(atoi(&arg));
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_right(char &arg){
-  CmdResult result;
   right(atoi(&arg));
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_left(char &arg){
-  CmdResult result;
   left(atoi(&arg));
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_penup(char &arg){
-  CmdResult result;
   penup();
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_pendown(char &arg){
-  CmdResult result;
   pendown();
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_follow(char &arg){
-  CmdResult result;
   follow();
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_collide(char &arg){
-  CmdResult result;
   collide();
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_beep(char &arg){
-  CmdResult result;
   beep(atoi(&arg));
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 CmdResult Mirobot::_calibrateSlack(char &arg){
-  CmdResult result;
   calibrateSlack(atoi(&arg));
-  result.immediate = false;
-  return result;
+  return getCmdResult("", false);
 }
 
 void Mirobot::initSettings(){
