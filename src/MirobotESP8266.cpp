@@ -498,12 +498,19 @@ void Mirobot::calibrateHandler(){
   }
 }
 
+void Mirobot::checkReady(){
+  if(manager.in_process && ready()){
+    manager.sendComplete();
+  }
+}
+
 void Mirobot::process(){
   ledHandler();
   servoHandler();
   autoHandler();
   calibrateHandler();
   sensorNotifier();
+  checkReady();
   manager.process();
 }
 

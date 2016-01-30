@@ -32,6 +32,8 @@ class CmdManager {
     void collideNotify(const char msg[]);
     void followNotify(int state);
     void setMirobot(Mirobot &);
+    void sendComplete();
+    boolean in_process;
   private:
     boolean processLine();
     void extractAttr(const char attr[4], char *json, char *output, char len);
@@ -42,7 +44,6 @@ class CmdManager {
     char webSocketKey[61];
     char input_buffer[INPUT_BUFFER_LENGTH];
     byte input_buffer_pos;
-    boolean in_process;
     char current_id[11];
     unsigned long last_char;
     boolean processJSON();

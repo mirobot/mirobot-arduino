@@ -107,6 +107,13 @@ void CmdManager::processCmd(char &cmd, char &arg, char &id){
   }
 }
 
+void CmdManager::sendComplete(){
+  if(in_process){
+    in_process = false;
+    sendResponse("complete", "", *current_id);
+  }
+}
+
 void CmdManager::sendResponse(const char status[], const char msg[], char &id){
   //Calculate the length of the message for websockets and chunked encoding
   unsigned char len = 13 + strlen(status);

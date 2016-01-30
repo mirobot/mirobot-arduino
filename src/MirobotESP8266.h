@@ -146,6 +146,7 @@ class Mirobot {
     int pendown_delay;
     long beepComplete;
     boolean calibratingSlack;
+    void checkReady();
     void _version(char &, char &);
     void _ping(char &, char &);
     void _uptime(char &, char &);
