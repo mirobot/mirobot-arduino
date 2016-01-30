@@ -1,0 +1,40 @@
+#ifndef __ShiftStepper_h__
+#define __ShiftStepper_h__
+#include "Arduino.h"
+
+#define FORWARD 1
+#define BACKWARD 0
+
+class ShiftStepper {
+  public:
+    ShiftStepper(int);
+    static void setup(int, int, int);
+    void instanceSetup();
+    void turn(long steps, byte direction);
+    boolean ready();
+    long remaining();
+    void release();
+    static void triggerTop();
+    void pause();
+    void resume();
+    void stop();
+    byte lastDirection;
+  private:
+    static ShiftStepper *firstInstance;
+    ShiftStepper *nextInstance;
+    void addNext(ShiftStepper *ref);
+    boolean _paused;
+    byte _pinmask;
+    volatile long _remaining;
+    byte _dir;
+    byte nextStep();
+    void setStep(byte);
+    void setNextStep();
+    void trigger();
+    byte currentStep;
+    static int data_pin;
+    static int clock_pin;
+    static int latch_pin;
+};
+
+#endif

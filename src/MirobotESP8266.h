@@ -2,7 +2,7 @@
 #define __MirobotESP8266_h__
 
 #include "Arduino.h"
-#include "lib/ShiftStep.h"
+#include "lib/ShiftStepper.h"
 #include "lib/CmdManager.h"
 #include <EEPROM.h>
 

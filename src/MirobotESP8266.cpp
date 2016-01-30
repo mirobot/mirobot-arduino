@@ -3,8 +3,8 @@
 #include "Arduino.h"
 #include "Mirobot.h"
 
-ShiftStep motor1(12, 13, 14);
-ShiftStep motor2(12, 13, 14);
+ShiftStepper motor1(0);
+ShiftStepper motor2(1);
 
 CmdManager manager;
 static char tmpBuff[10];
@@ -18,7 +18,7 @@ Mirobot::Mirobot(){
 }
 
 void Mirobot::begin(){
-  ShiftStep::setup();
+  ShiftStepper::setup(12, 13, 14);
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
   // Set up the collision sensor inputs and state
