@@ -13,13 +13,14 @@ void CmdManager::addStream(Stream &s){
 void CmdManager::setMirobot(Mirobot &m){
   _m = &m;
 }
-void CmdManager::addCmd(const char cmd[], MirobotMemFn func){
+void CmdManager::addCmd(const char cmd[], MirobotMemFn func, bool immediate){
   if (cmd_counter == CMD_COUNT) {
     _s->println("Too many commands defined");
     return;
   }
   _cmds[cmd_counter].cmd = cmd;
   _cmds[cmd_counter].func = func;
+  _cmds[cmd_counter].immediate = immediate;
   cmd_counter++;
 }
 
@@ -40,8 +41,9 @@ void CmdManager::process(){
       // It's been successfully processed as a line
       input_buffer_pos = 0;
     }else{
-      // Not a line to process so store for processing as a websocket frame
+      // Not a line to process so store for processing
       input_buffer[input_buffer_pos++] = incomingByte;
+      input_buffer[input_buffer_pos] = 0;
     }
   }else{
     //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
@@ -73,36 +75,36 @@ boolean CmdManager::processJSON(){
 }
 
 void CmdManager::processCmd(char &cmd, char &arg, char &id){
-  int cmd_num = 0;
-  CmdResult res;
+  int cmd_num, i;
+  char msg[41] = {0,};
   
-  for(cmd_num = 0; cmd_num < cmd_counter; cmd_num++){
-    if(!strcmp(&cmd, _cmds[cmd_num].cmd)){
+  cmd_num = -1;
+  for(i = 0; i < cmd_counter; i++){
+    if(!strcmp(&cmd, _cmds[i].cmd)){
+      cmd_num = i;
       break;
     }
   }
-  res = (_m->*(_cmds[cmd_num].func))(arg);
-  if(res.immediate){
-    sendResponse("complete", res.msg, id);
-  }else{
-    sendResponse("accepted", res.msg, id);
-  }
-  
-  /*
-    if(in_process){
-      // the previous command hasn't finished, send an error
-      sendResponse("error", "Previous command not finished", id);
-      
-      strcpy(current_id, &id);
-      in_process = true;
-              // the command isn't recognised, send an error
-        sendResponse("error", "Command not recognised", id);
-        return;
-      }
-      sendResponse("accepted", "", *current_id);
-    }
-*/
 
+  if(cmd_num >= 0){
+    if(_cmds[cmd_num].immediate){
+      (_m->*(_cmds[cmd_num].func))(arg, *msg);
+      sendResponse("complete", msg, id);
+    }else{
+      if(in_process){
+        // the previous command hasn't finished, send an error
+        sendResponse("error", "Previous command not finished", id);
+      }else{
+        (_m->*(_cmds[cmd_num].func))(arg, *msg);
+        strcpy(current_id, &id);
+        in_process = true;
+        sendResponse("accepted", msg, id);
+      }
+    }
+  }else{
+    // the command isn't recognised, send an error
+    sendResponse("error", "Command not recognised", id);
+  }
 }
 
 void CmdManager::sendResponse(const char status[], const char msg[], char &id){

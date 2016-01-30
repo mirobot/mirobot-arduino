@@ -13,26 +13,20 @@ class CmdManager;
 
 typedef enum {JSON_EXPECT_JSON_ATTR, JSON_ATTR, JSON_JSON_DELIM, JSON_VAL} jsonParseState_t;
 
-
-struct CmdResult {
-  const char *msg;
-  bool immediate;
-};
-
-typedef CmdResult (Mirobot::*MirobotMemFn)(char &);
+typedef void (Mirobot::*MirobotMemFn)(char &, char &);
 typedef void (* fp) (void *, char *);
 typedef boolean (* fp_ready) (void *);
 
 struct Cmd {
   const char *cmd;
   MirobotMemFn func;
+  bool immediate;
 };
 
 class CmdManager {
   public:
     CmdManager();
-    //void addCmd(const char cmd[], Mirobot &m, MirobotMemFn func, char arg_count);
-    void addCmd(const char cmd[], MirobotMemFn func);
+    void addCmd(const char cmd[], MirobotMemFn func, bool immediate);
     void addStream(Stream &s);
     void process();
     void collideNotify(const char msg[]);

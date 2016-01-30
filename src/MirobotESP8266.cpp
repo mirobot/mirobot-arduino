@@ -42,172 +42,140 @@ void Mirobot::setupWifi(){
 
 void Mirobot::setupCmds(){
   manager.setMirobot(self());
-  
-  manager.addCmd("version",          &Mirobot::_version);
-  manager.addCmd("ping",             &Mirobot::_ping);
-  manager.addCmd("uptime",           &Mirobot::_uptime);
-  manager.addCmd("uptime",           &Mirobot::_uptime);
-  manager.addCmd("pause",            &Mirobot::_pause);
-  manager.addCmd("resume",           &Mirobot::_resume);
-  manager.addCmd("stop",             &Mirobot::_stop);
-  manager.addCmd("collideState",     &Mirobot::_collideState);
-  manager.addCmd("collideNotify",    &Mirobot::_collideNotify);
-  manager.addCmd("followState",      &Mirobot::_followState);
-  manager.addCmd("followNotify",     &Mirobot::_followNotify);
-  manager.addCmd("slackCalibration", &Mirobot::_slackCalibration);
-  manager.addCmd("moveCalibration",  &Mirobot::_moveCalibration);
-  manager.addCmd("turnCalibration",  &Mirobot::_turnCalibration);
-  manager.addCmd("calibrateMove",    &Mirobot::_calibrateMove);
-  manager.addCmd("calibrateTurn",    &Mirobot::_calibrateTurn);
-  manager.addCmd("forward",          &Mirobot::_forward);
-  manager.addCmd("back",             &Mirobot::_back);
-  manager.addCmd("right",            &Mirobot::_right);
-  manager.addCmd("left",             &Mirobot::_left);
-  manager.addCmd("penup",            &Mirobot::_penup);
-  manager.addCmd("pendown",          &Mirobot::_pendown);
-  manager.addCmd("follow",           &Mirobot::_follow);
-  manager.addCmd("collide",          &Mirobot::_collide);
-  manager.addCmd("beep",             &Mirobot::_beep);
-  manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack);
+  //             Command name        Handler function             // Returns immediately
+  manager.addCmd("version",          &Mirobot::_version,          true);
+  manager.addCmd("ping",             &Mirobot::_ping,             true);
+  manager.addCmd("uptime",           &Mirobot::_uptime,           true);
+  manager.addCmd("uptime",           &Mirobot::_uptime,           true);
+  manager.addCmd("pause",            &Mirobot::_pause,            true);
+  manager.addCmd("resume",           &Mirobot::_resume,           true);
+  manager.addCmd("stop",             &Mirobot::_stop,             true);
+  manager.addCmd("collideState",     &Mirobot::_collideState,     true);
+  manager.addCmd("collideNotify",    &Mirobot::_collideNotify,    true);
+  manager.addCmd("followState",      &Mirobot::_followState,      true);
+  manager.addCmd("followNotify",     &Mirobot::_followNotify,     true);
+  manager.addCmd("slackCalibration", &Mirobot::_slackCalibration, true);
+  manager.addCmd("moveCalibration",  &Mirobot::_moveCalibration,  true);
+  manager.addCmd("turnCalibration",  &Mirobot::_turnCalibration,  true);
+  manager.addCmd("calibrateMove",    &Mirobot::_calibrateMove,    true);
+  manager.addCmd("calibrateTurn",    &Mirobot::_calibrateTurn,    true);
+  manager.addCmd("forward",          &Mirobot::_forward,          false);
+  manager.addCmd("back",             &Mirobot::_back,             false);
+  manager.addCmd("right",            &Mirobot::_right,            false);
+  manager.addCmd("left",             &Mirobot::_left,             false);
+  manager.addCmd("penup",            &Mirobot::_penup,            false);
+  manager.addCmd("pendown",          &Mirobot::_pendown,          false);
+  manager.addCmd("follow",           &Mirobot::_follow,           false);
+  manager.addCmd("collide",          &Mirobot::_collide,          false);
+  manager.addCmd("beep",             &Mirobot::_beep,             false);
+  manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
 }
 
-CmdResult getCmdResult(const char msg[], bool imm){
-  CmdResult res;
-  res.immediate = imm;
-  res.msg = msg;
-  return res;
+
+void Mirobot::_version(char &arg, char &msg){
+  strcpy(&msg, MIROBOT_VERSION);
 }
 
-CmdResult Mirobot::_version(char &arg){
-  return getCmdResult(MIROBOT_VERSION, true);
+void Mirobot::_ping(char &arg, char &msg){}
+
+void Mirobot::_uptime(char &arg, char &msg){
+  sprintf(&msg, "%lu", millis());
 }
 
-CmdResult Mirobot::_ping(char &arg){
-  return getCmdResult("", true);
-}
-
-CmdResult Mirobot::_uptime(char &arg){
-  sprintf(tmpBuff, "%lu", millis());
-  return getCmdResult(tmpBuff, true);
-}
-
-CmdResult Mirobot::_pause(char &arg){
+void Mirobot::_pause(char &arg, char &msg){
   pause();
-  return getCmdResult("", true);
 }
 
-CmdResult Mirobot::_resume(char &arg){
+void Mirobot::_resume(char &arg, char &msg){
   resume();
-  return getCmdResult("", true);
 }
 
-CmdResult Mirobot::_stop(char &arg){
+void Mirobot::_stop(char &arg, char &msg){
   stop();
-  return getCmdResult("", true);
 }
 
-CmdResult Mirobot::_collideState(char &arg){
-  CmdResult result;
-  collideState(*tmpBuff);
-  return getCmdResult(tmpBuff, true);
+void Mirobot::_collideState(char &arg, char &msg){
+  collideState(msg);
 }
 
-CmdResult Mirobot::_collideNotify(char &arg){
+void Mirobot::_collideNotify(char &arg, char &msg){
   if(!strcmp(&arg, "false")){
     collideNotify = false;
   }else{
     collideNotify = true;
   }
-  return getCmdResult("", true);
 }
 
-CmdResult Mirobot::_followState(char &arg){
-  sprintf(tmpBuff, "%d", followState());
-  return getCmdResult(tmpBuff, true);
+void Mirobot::_followState(char &arg, char &msg){
+  sprintf(&msg, "%d", followState());
 }
 
-CmdResult Mirobot::_followNotify(char &arg){
+void Mirobot::_followNotify(char &arg, char &msg){
   if(!strcmp(&arg, "false")){
     followNotify = false;
   }else{
     followNotify = true;
   }
-  return getCmdResult("", true);
 }
 
-CmdResult Mirobot::_slackCalibration(char &arg){
-  sprintf(tmpBuff, "%d", settings.slackCalibration);
-  return getCmdResult(tmpBuff, true);
+void Mirobot::_slackCalibration(char &arg, char &msg){
+  sprintf(&msg, "%d", settings.slackCalibration);
 }
 
-CmdResult Mirobot::_moveCalibration(char &arg){
-  dtostrf(settings.moveCalibration , 2, 6, tmpBuff);
-  return getCmdResult(tmpBuff, true);
+void Mirobot::_moveCalibration(char &arg, char &msg){
+  dtostrf(settings.moveCalibration , 2, 6, &msg);
 }
 
-CmdResult Mirobot::_turnCalibration(char &arg){
-  dtostrf(settings.turnCalibration , 2, 6, tmpBuff);
-  return getCmdResult(tmpBuff, true);
+void Mirobot::_turnCalibration(char &arg, char &msg){
+  dtostrf(settings.turnCalibration , 2, 6, &msg);
 }
 
-CmdResult Mirobot::_calibrateMove(char &arg){
+void Mirobot::_calibrateMove(char &arg, char &msg){
   calibrateMove(atof(&arg));
-  return getCmdResult("", true);
 }
 
-CmdResult Mirobot::_calibrateTurn(char &arg){
+void Mirobot::_calibrateTurn(char &arg, char &msg){
   calibrateTurn(atof(&arg));
-  return getCmdResult("", true);
 }
 
-CmdResult Mirobot::_forward(char &arg){
+void Mirobot::_forward(char &arg, char &msg){
   forward(atoi(&arg));
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_back(char &arg){
+void Mirobot::_back(char &arg, char &msg){
   back(atoi(&arg));
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_right(char &arg){
+void Mirobot::_right(char &arg, char &msg){
   right(atoi(&arg));
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_left(char &arg){
+void Mirobot::_left(char &arg, char &msg){
   left(atoi(&arg));
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_penup(char &arg){
+void Mirobot::_penup(char &arg, char &msg){
   penup();
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_pendown(char &arg){
+void Mirobot::_pendown(char &arg, char &msg){
   pendown();
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_follow(char &arg){
+void Mirobot::_follow(char &arg, char &msg){
   follow();
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_collide(char &arg){
+void Mirobot::_collide(char &arg, char &msg){
   collide();
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_beep(char &arg){
+void Mirobot::_beep(char &arg, char &msg){
   beep(atoi(&arg));
-  return getCmdResult("", false);
 }
 
-CmdResult Mirobot::_calibrateSlack(char &arg){
+void Mirobot::_calibrateSlack(char &arg, char &msg){
   calibrateSlack(atoi(&arg));
-  return getCmdResult("", false);
 }
 
 void Mirobot::initSettings(){
@@ -441,7 +409,8 @@ void Mirobot::collideHandler(){
 
 void Mirobot::ledHandler(){
   long t = millis();
-  digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
+  //digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
+  digitalWrite(STATUS_LED, HIGH);
 }
 
 void Mirobot::servoHandler(){
