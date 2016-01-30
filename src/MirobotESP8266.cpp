@@ -99,11 +99,7 @@ void Mirobot::_collideState(char &arg, char &msg){
 }
 
 void Mirobot::_collideNotify(char &arg, char &msg){
-  if(!strcmp(&arg, "false")){
-    collideNotify = false;
-  }else{
-    collideNotify = true;
-  }
+  collideNotify = !!strcmp(&arg, "false");
 }
 
 void Mirobot::_followState(char &arg, char &msg){
@@ -111,11 +107,7 @@ void Mirobot::_followState(char &arg, char &msg){
 }
 
 void Mirobot::_followNotify(char &arg, char &msg){
-  if(!strcmp(&arg, "false")){
-    followNotify = false;
-  }else{
-    followNotify = true;
-  }
+  followNotify = !!strcmp(&arg, "false");
 }
 
 void Mirobot::_slackCalibration(char &arg, char &msg){
@@ -200,36 +192,6 @@ void Mirobot::saveSettings(){
   for (unsigned int t=0; t<sizeof(settings); t++){
     EEPROM.write(EEPROM_OFFSET + 2 + t, *((char*)&settings + t));
   }
-}
-
-void Mirobot::setHwVersion(char &version){
-  char v[4];
-  int i;
-  int v_ptr = 0;
-  char *ptr = &version;
-  for(i = 0; i < 9; i++){
-    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
-      v[v_ptr++] = ptr[i];
-    }
-    if(ptr[i] == '.'){
-      v[v_ptr++] = '\0';
-      break;
-    }
-  }
-  settings.hwmajor = atoi(v);
-  v_ptr = 0;
-  for(i = i; i < 9; i++){
-    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
-      v[v_ptr++] = ptr[i];
-    }
-    if(ptr[i] == '\0'){
-      v[v_ptr++] = '\0';
-      break;
-    }
-  }
-  v[v_ptr] = '\0';
-  settings.hwminor = atoi(v);
-  saveSettings();
 }
 
 void Mirobot::takeUpSlack(byte motor1Dir, byte motor2Dir){
