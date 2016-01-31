@@ -6,16 +6,43 @@ ShiftStepper *ShiftStepper::firstInstance;
 int ShiftStepper::data_pin;
 int ShiftStepper::clock_pin;
 int ShiftStepper::latch_pin;
+uint8_t ShiftStepper::lastBits;
+uint8_t ShiftStepper::currentBits;
 
-ShiftStepper::ShiftStepper(int motor_offset) {
+ShiftStepper::ShiftStepper(int offset) {
   _remaining = 0;
   _paused = false;
+  motor_offset = offset;
   currentStep = 0;
+  microCounter = _3MS_;
   release();
   if(firstInstance){
     firstInstance->addNext(this);
   }else{
     firstInstance = this;
+  }
+}
+
+void ShiftStepper::setup(int _data_pin, int _clock_pin, int _latch_pin){
+  data_pin = _data_pin;
+  clock_pin = _clock_pin;
+  latch_pin = _latch_pin;
+  lastBits = 0;
+  currentBits = 0;
+  if(firstInstance){
+    firstInstance->instanceSetup();
+  }
+  // Initialise the timers
+  timer1_disable();
+  timer1_isr_init();
+  timer1_attachInterrupt(ShiftStepper::triggerTop);
+  timer1_enable(TIM_DIV1, TIM_EDGE, TIM_LOOP);
+  timer1_write(clockCyclesPerMicrosecond() * 10);
+}
+
+void ShiftStepper::instanceSetup(){
+  if(nextInstance){
+    nextInstance->instanceSetup();
   }
 }
 
@@ -25,22 +52,6 @@ void ShiftStepper::addNext(ShiftStepper *ref){
   }else{
     nextInstance = ref;
   }
-}
-
-void ShiftStepper::instanceSetup(){
-  if(nextInstance){
-    nextInstance->instanceSetup();
-  }
-}
-
-void ShiftStepper::setup(int _data_pin, int _clock_pin, int _latch_pin){
-  data_pin = _data_pin;
-  clock_pin = _clock_pin;
-  latch_pin = _latch_pin;
-  if(firstInstance){
-    firstInstance->instanceSetup();
-  }
-  // Initialise the timers
 }
 
 void ShiftStepper::pause(){
@@ -85,19 +96,20 @@ byte ShiftStepper::nextStep(){
 
 void ShiftStepper::setNextStep(){
   if(_remaining > 0 && !_paused){
-    _remaining--;
-    setStep(nextStep());
+    if(!--microCounter){
+      microCounter = _3MS_;
+      _remaining--;
+      updateBits(nextStep());
+    }
   }else{
     release();
   }
 }
 
-void ShiftStepper::setStep(byte state){
-  //Send to the shift register
-}
-
 void ShiftStepper::release(){
-  setStep(0);
+  currentStep = 0;
+  updateBits(0);
+  sendBits();
 }
 
 void ShiftStepper::trigger(){
@@ -107,10 +119,27 @@ void ShiftStepper::trigger(){
   }
 }
 
-void ShiftStepper::triggerTop(){
+void ShiftStepper::updateBits(uint8_t bits){
+  bits &= B1111;
+  bits <<= (motor_offset*4);
+  currentBits &= ~(B1111 << (motor_offset *4));
+  currentBits |= bits;
+}
+
+void ShiftStepper::sendBits(){
+  if(currentBits != lastBits){
+    lastBits = currentBits;
+    shiftOut(data_pin, clock_pin, MSBFIRST, currentBits);
+    digitalWrite(latch_pin, 1);
+    digitalWrite(latch_pin, 0);
+  }
+}
+
+void ICACHE_RAM_ATTR ShiftStepper::triggerTop(){
   if(firstInstance){
     firstInstance->trigger();
   }
+  sendBits();
 }
 
 #endif

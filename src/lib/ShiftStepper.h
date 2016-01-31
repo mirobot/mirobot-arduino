@@ -5,6 +5,8 @@
 #define FORWARD 1
 #define BACKWARD 0
 
+#define _3MS_ 300
+
 class ShiftStepper {
   public:
     ShiftStepper(int);
@@ -35,6 +37,12 @@ class ShiftStepper {
     static int data_pin;
     static int clock_pin;
     static int latch_pin;
+    int microCounter;
+    int motor_offset;
+    static uint8_t lastBits;
+    static uint8_t currentBits;
+    void updateBits(uint8_t bits);
+    static void sendBits();
 };
 
 #endif
