@@ -29,28 +29,18 @@ void Mirobot::setup(){
   pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
   pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
   _collideState = NORMAL;
-  //setPenState(UP);
+  setPenState(UP);
   // Set up the status LED
   pinMode(STATUS_LED, OUTPUT);
+  initSettings();
 }
 
 void Mirobot::setup(Stream &s){
-  HotStepper::setup(TIMER1INT);
-  // Set up the pen arm servo
-  pinMode(SERVO_PIN, OUTPUT);
-  // Set up the collision sensor inputs and state
-  pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
-  pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
-  _collideState = NORMAL;
-  setPenState(UP);
+  setup()
   // We will be non-blocking so we can continue to process serial input
   blocking = false;
   // Set up the command processor
   p.setup(s, self());
-  // Set up the status LED
-  pinMode(STATUS_LED, OUTPUT);
-  initSettings();
-  penup();
 }
 
 void Mirobot::initSettings(){
