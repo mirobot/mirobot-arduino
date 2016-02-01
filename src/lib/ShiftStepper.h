@@ -5,7 +5,9 @@
 #define FORWARD 1
 #define BACKWARD 0
 
-#define _3MS_ 300
+#define BASE_INTERRUPT_US 50
+#define DEFAULT_STEP_PERIOD 3000
+#define UCOUNTER_DEFAULT DEFAULT_STEP_PERIOD/BASE_INTERRUPT_US
 
 class ShiftStepper {
   public:
@@ -43,6 +45,8 @@ class ShiftStepper {
     static uint8_t currentBits;
     void updateBits(uint8_t bits);
     static void sendBits();
+    static void startTimer();
+    static void stopTimer();
 };
 
 #endif

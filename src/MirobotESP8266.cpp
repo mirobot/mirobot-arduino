@@ -18,29 +18,33 @@ Mirobot::Mirobot(){
 }
 
 void Mirobot::begin(){
-  ShiftStepper::setup(12, 13, 14);
+  ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
   // Set up the collision sensor inputs and state
-  pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
-  pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
+  //pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
+  //pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
   _collideStatus = NORMAL;
-  //setPenState(UP);
+  setPenState(UP);
   // Set up the status LED
-  pinMode(STATUS_LED, OUTPUT);
-  setupCmds();
+  //pinMode(STATUS_LED, OUTPUT);
+  initSettings();
+  initCmds();
 }
 
 void Mirobot::setupSerial(){
+  blocking = false;
   // Set up Serial and add it to be processed
   Serial.begin(230400);
+  Serial.setTimeout(1); 
   manager.addStream(Serial);
 }
 
 void Mirobot::setupWifi(){
+  //wifi.begin();
 }
 
-void Mirobot::setupCmds(){
+void Mirobot::initCmds(){
   manager.setMirobot(self());
   //             Command name        Handler function             // Returns immediately
   manager.addCmd("version",          &Mirobot::_version,          true);
@@ -69,6 +73,22 @@ void Mirobot::setupCmds(){
   manager.addCmd("collide",          &Mirobot::_collide,          false);
   manager.addCmd("beep",             &Mirobot::_beep,             false);
   manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
+}
+
+void Mirobot::initSettings(){
+  if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2){
+    // We've previously written something valid to the EEPROM
+    for (unsigned int t=0; t<sizeof(settings); t++){
+      *((char*)&settings + t) = EEPROM.read(EEPROM_OFFSET + 2 + t);
+    }
+  }else{
+    settings.hwmajor = 0;
+    settings.hwminor = 0;
+    settings.slackCalibration = 14;
+    settings.moveCalibration = 1.0f;
+    settings.turnCalibration = 1.0f;
+    saveSettings();
+  }
 }
 
 
@@ -170,22 +190,6 @@ void Mirobot::_calibrateSlack(char &arg, char &msg){
   calibrateSlack(atoi(&arg));
 }
 
-void Mirobot::initSettings(){
-  if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2){
-    // We've previously written something valid to the EEPROM
-    for (unsigned int t=0; t<sizeof(settings); t++){
-      *((char*)&settings + t) = EEPROM.read(EEPROM_OFFSET + 2 + t);
-    }
-  }else{
-    settings.hwmajor = 0;
-    settings.hwminor = 0;
-    settings.slackCalibration = 14;
-    settings.moveCalibration = 1.0f;
-    settings.turnCalibration = 1.0f;
-    saveSettings();
-  }
-}
-
 void Mirobot::saveSettings(){
   EEPROM.write(EEPROM_OFFSET, MAGIC_BYTE_1);
   EEPROM.write(EEPROM_OFFSET + 1, MAGIC_BYTE_2);
@@ -278,6 +282,7 @@ void Mirobot::collide(){
 }
 
 void Mirobot::collideState(char &state){
+  /*
   boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
   if(collideLeft && collideRight){
@@ -289,6 +294,8 @@ void Mirobot::collideState(char &state){
   }else{
     strcpy(&state, "none");
   }
+  */
+  strcpy(&state, "none");
 }
 
 void Mirobot::beep(int duration){
@@ -338,6 +345,7 @@ void Mirobot::followHandler(){
 }
 
 void Mirobot::collideHandler(){
+  /*
   boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
   if(_collideStatus == NORMAL){
@@ -367,12 +375,13 @@ void Mirobot::collideHandler(){
         break;
     }
   }
+  */
 }
 
 void Mirobot::ledHandler(){
   long t = millis();
   //digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
-  digitalWrite(STATUS_LED, HIGH);
+  //digitalWrite(STATUS_LED, HIGH);
 }
 
 void Mirobot::servoHandler(){
@@ -401,6 +410,7 @@ void Mirobot::autoHandler(){
 }
 
 void Mirobot::sensorNotifier(){
+  /*
   if(collideNotify){
     boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
     boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
@@ -423,6 +433,7 @@ void Mirobot::sensorNotifier(){
     }
     lastFollowState = currentFollowState;
   }
+  */
 }
 
 // This allows for runtime configuration of which hardware is used

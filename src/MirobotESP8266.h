@@ -33,26 +33,11 @@ struct CmdResult;
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
 
-#ifdef AVR
-#define STATUS_LED 13
+#define SHIFT_REG_DATA  12
+#define SHIFT_REG_CLOCK 13
+#define SHIFT_REG_LATCH 14
 
-#define MIROBOT_VERSION "3.0.0"
-
-#define EEPROM_OFFSET 16
-
-#define SERVO_PIN 3
-
-#define SPEAKER_PIN 9
-
-#define LEFT_LINE_SENSOR  A0
-#define RIGHT_LINE_SENSOR A1
-
-#define LEFT_COLLIDE_SENSOR  A3
-#define RIGHT_COLLIDE_SENSOR A2
-#endif
-
-#ifdef ESP8266
-#define STATUS_LED 13
+//#define STATUS_LED 13
 
 #define MIROBOT_VERSION "3.0.5"
 
@@ -65,9 +50,8 @@ struct CmdResult;
 #define LEFT_LINE_SENSOR  A0
 #define RIGHT_LINE_SENSOR A0
 
-#define LEFT_COLLIDE_SENSOR  14
-#define RIGHT_COLLIDE_SENSOR 13
-#endif
+//#define LEFT_COLLIDE_SENSOR  14
+//#define RIGHT_COLLIDE_SENSOR 13
 
 typedef enum {UP, DOWN} penState_t;
 
@@ -87,7 +71,6 @@ class Mirobot {
     void begin();
     void setupSerial();
     void setupWifi();
-    void setupCmds();
     void forward(int distance);
     void back(int distance);
     void right(int angle);
@@ -124,6 +107,7 @@ class Mirobot {
     void autoHandler();
     void sensorNotifier();
     void checkState();
+    void initCmds();
     void initSettings();
     void saveSettings();
     char lastCollideState;
