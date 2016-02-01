@@ -5,7 +5,7 @@
 CmdProcessor::CmdProcessor(){
   socketMode = RAW;
   in_process = false;
-  at_cmd_state = CLOSED;
+  at_cmd_state = AT_CLOSED;
   strcpy(webSocketKey, "------------------------258EAFA5-E914-47DA-95CA-C5AB0DC85B11");
   resetTimeout = 0;
   current_id[0] = 0;
@@ -44,7 +44,7 @@ void CmdProcessor::resetCheck(){
 
 void CmdProcessor::process(){
   // check if the previous command is ready
-  if(in_process && _m->ready() && at_cmd_state == CLOSED){
+  if(in_process && _m->ready() && at_cmd_state == AT_CLOSED){
     in_process = false;
     sendResponse("complete", "", *current_id);
   }
@@ -59,7 +59,7 @@ void CmdProcessor::process(){
   if (_s->available() > 0){
     last_char = millis();
     char incomingByte = _s->read();
-    if(at_cmd_state != CLOSED){
+    if(at_cmd_state != AT_CLOSED){
       handleAtCmds(incomingByte);
     }else if((incomingByte == '\r' || incomingByte == '\n') && processLine()){
       // It's been successfully processed as a line
@@ -86,12 +86,12 @@ void CmdProcessor::process(){
 
 void CmdProcessor::startAtCmdReset(){
   _s->print("+++");
-  at_cmd_state = OPENING;
+  at_cmd_state = AT_OPENING;
 }
 
 void CmdProcessor::handleAtCmds(char incomingByte){
   // process any incoming data as an AT command
-  if(at_cmd_state == OPENING){
+  if(at_cmd_state == AT_OPENING){
     // we're doing the starting handshake
     if(incomingByte == 'a'){
       // respond to the incoming 'a' with our own 'a' after sending the +++
@@ -101,34 +101,34 @@ void CmdProcessor::handleAtCmds(char incomingByte){
       input_buffer[input_buffer_pos++] = incomingByte;
       if(input_buffer_pos >= 3){
         if(!strncmp(input_buffer, "+ok", 3)){
-          at_cmd_state = READY;
+          at_cmd_state = AT_READY;
           input_buffer_pos = 0;
         }else if(!strncmp(input_buffer, "+++", 3)){
           // It's already open and has just echoed our +++
           // send a carriage return to flush
           _s->print("\r\n");
-          at_cmd_state = FLUSHING;
+          at_cmd_state = AT_FLUSHING;
         }
       }
     }
-  }else if(at_cmd_state == READY){
+  }else if(at_cmd_state == AT_READY){
     // send the AT message we buffered earlier
     _s->println("AT+WMODE=APSTA");
-    at_cmd_state = RECEIVING;
-  }else if(at_cmd_state == RECEIVING){
+    at_cmd_state = AT_RECEIVING;
+  }else if(at_cmd_state == AT_RECEIVING){
     if((incomingByte == '\r' || incomingByte == '\n') && input_buffer_pos > 0){
       // we've received a line
       if(!strncmp(input_buffer, "+ok", 3)){
         _s->println("AT+Z");
-        at_cmd_state = CLOSED;
+        at_cmd_state = AT_CLOSED;
       }
       input_buffer_pos = 0;
     }else{
       input_buffer[input_buffer_pos++] = incomingByte;
     }
-  }else if(at_cmd_state == FLUSHING){
+  }else if(at_cmd_state == AT_FLUSHING){
     if((incomingByte == '\r' || incomingByte == '\n')){
-      at_cmd_state = READY;
+      at_cmd_state = AT_READY;
     }
   }
 }
