@@ -69,8 +69,8 @@ class Mirobot {
   public:
     Mirobot();
     void begin();
-    void setupSerial();
-    void setupWifi();
+    void enableSerial();
+    void enableWifi();
     void forward(int distance);
     void back(int distance);
     void right(int angle);

@@ -32,7 +32,7 @@ void Mirobot::begin(){
   initCmds();
 }
 
-void Mirobot::setupSerial(){
+void Mirobot::enableSerial(){
   blocking = false;
   // Set up Serial and add it to be processed
   Serial.begin(230400);
@@ -40,7 +40,7 @@ void Mirobot::setupSerial(){
   manager.addStream(Serial);
 }
 
-void Mirobot::setupWifi(){
+void Mirobot::enableWifi(){
   //wifi.begin();
 }
 
