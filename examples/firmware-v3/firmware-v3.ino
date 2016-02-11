@@ -4,9 +4,9 @@
 Mirobot mirobot;
 
 void setup(){
-  mirobot.setup();
-  mirobot.setupSerial();
-  mirobot.setupWifi();
+  mirobot.begin();
+  mirobot.enableSerial();
+  mirobot.enableWifi();
 }
 
 void loop(){

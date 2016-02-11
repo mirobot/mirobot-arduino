@@ -4,6 +4,7 @@
 #include "Arduino.h"
 #include "lib/ShiftStepper.h"
 #include "lib/CmdManager.h"
+#include "lib/MirobotWifi.h"
 #include <EEPROM.h>
 
 class CmdManager;

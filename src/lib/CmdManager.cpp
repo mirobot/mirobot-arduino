@@ -25,14 +25,6 @@ void CmdManager::addCmd(const char cmd[], MirobotMemFn func, bool immediate){
 }
 
 void CmdManager::process(){
-  // check if the previous command is ready
-  /*
-  if(in_process && _m->ready() && at_cmd_state == CLOSED){
-    in_process = false;
-    sendResponse("complete", "", *current_id);
-  }
-  */
-
   // process incoming data
   if (_s->available() > 0){
     last_char = millis();

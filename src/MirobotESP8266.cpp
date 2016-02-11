@@ -6,6 +6,8 @@
 ShiftStepper motor1(0);
 ShiftStepper motor2(1);
 
+MirobotWifi wifi;
+
 CmdManager manager;
 static char tmpBuff[10];
 
@@ -41,7 +43,7 @@ void Mirobot::enableSerial(){
 }
 
 void Mirobot::enableWifi(){
-  //wifi.begin();
+  wifi.begin();
 }
 
 void Mirobot::initCmds(){
