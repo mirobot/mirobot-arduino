@@ -5,6 +5,7 @@
 #include "lib/ShiftStepper.h"
 #include "lib/CmdManager.h"
 #include "lib/MirobotWifi.h"
+#include "Wire.h"
 #include <EEPROM.h>
 
 class CmdManager;
@@ -33,9 +34,13 @@ struct CmdResult;
 
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
-
+/*
 #define SHIFT_REG_DATA  12
 #define SHIFT_REG_CLOCK 13
+#define SHIFT_REG_LATCH 14
+*/
+#define SHIFT_REG_DATA  13
+#define SHIFT_REG_CLOCK 12
 #define SHIFT_REG_LATCH 14
 
 //#define STATUS_LED 13
@@ -48,8 +53,9 @@ struct CmdResult;
 
 #define SPEAKER_PIN 16
 
-#define LEFT_LINE_SENSOR  A0
-#define RIGHT_LINE_SENSOR A0
+#define PCF8591_ADDRESS B1001000
+#define I2C_DATA 2
+#define I2C_CLOCK 0
 
 //#define LEFT_COLLIDE_SENSOR  14
 //#define RIGHT_COLLIDE_SENSOR 13
@@ -157,6 +163,12 @@ class Mirobot {
     void _collide(char &, char &);
     void _beep(char &, char &);
     void _calibrateSlack(char &, char &);
+    void readADC();
+    boolean leftCollide;
+    boolean rightCollide;
+    uint8_t leftLineSensor;
+    uint8_t rightLineSensor;
+    long nextADCRead;
 };
 
 #endif

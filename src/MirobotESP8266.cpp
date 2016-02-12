@@ -14,6 +14,7 @@ static char tmpBuff[10];
 Mirobot::Mirobot(){
   blocking = true;
   lastLedChange = millis();
+  nextADCRead = 0;
   calibratingSlack = false;
   beepComplete = 0;
   version(3);
@@ -23,15 +24,17 @@ void Mirobot::begin(){
   ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
-  // Set up the collision sensor inputs and state
-  //pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
-  //pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
+  // Set up the collision sensor state
   _collideStatus = NORMAL;
+  // Start the pen arm in the up state
   setPenState(UP);
   // Set up the status LED
   //pinMode(STATUS_LED, OUTPUT);
   initSettings();
+  // Set up the commands for the command manager
   initCmds();
+  // Set up the I2C lines for the ADC
+  Wire.begin(2, 0);
 }
 
 void Mirobot::enableSerial(){
@@ -276,7 +279,8 @@ void Mirobot::follow(){
 }
 
 int Mirobot::followState(){
-  return analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+  readADC();
+  return leftLineSensor - rightLineSensor;
 }
 
 void Mirobot::collide(){
@@ -284,20 +288,17 @@ void Mirobot::collide(){
 }
 
 void Mirobot::collideState(char &state){
-  /*
-  boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
-  boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-  if(collideLeft && collideRight){
+  readADC();
+
+  if(leftCollide && rightCollide){
     strcpy(&state, "both");
-  }else if(collideLeft){
+  }else if(leftCollide){
     strcpy(&state, "left");
-  }else if(collideRight){
+  }else if(rightCollide){
     strcpy(&state, "right");
   }else{
     strcpy(&state, "none");
   }
-  */
-  strcpy(&state, "none");
 }
 
 void Mirobot::beep(int duration){
@@ -326,8 +327,10 @@ void Mirobot::setPenState(penState_t state){
 }
 
 void Mirobot::followHandler(){
+  readADC();
+
   if(motor1.ready() && motor2.ready()){
-    int diff = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+    int diff = leftLineSensor - rightLineSensor;
     if(diff > 5){
       if(versionNum == 1){
         right(1);
@@ -347,14 +350,13 @@ void Mirobot::followHandler(){
 }
 
 void Mirobot::collideHandler(){
-  /*
-  boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
-  boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
+  readADC();
+
   if(_collideStatus == NORMAL){
-    if(collideLeft){
+    if(leftCollide){
       _collideStatus = LEFT_REVERSE;
       back(50);
-    }else if(collideRight){
+    }else if(rightCollide){
       _collideStatus = RIGHT_REVERSE;
       back(50);
     }else{
@@ -377,7 +379,6 @@ void Mirobot::collideHandler(){
         break;
     }
   }
-  */
 }
 
 void Mirobot::ledHandler(){
@@ -411,31 +412,57 @@ void Mirobot::autoHandler(){
   }
 }
 
+void Mirobot::readADC(){
+  uint8_t temp[4];
+  if(millis() >= nextADCRead){
+    nextADCRead = millis() + 10;
+
+    // Fetch the data from the ADC
+    Wire.beginTransmission(PCF8591_ADDRESS); // wake up PCF8591
+    Wire.write(0x04); // control byte - read ADC0 and increment counter
+    Wire.endTransmission();
+    Wire.requestFrom(PCF8591_ADDRESS, 6);
+    Wire.read(); // Padding bytes to allow conversion to complete
+    Wire.read(); // Padding bytes to allow conversion to complete
+    temp[0] = Wire.read();
+    temp[1] = Wire.read();
+    temp[2] = Wire.read();
+    temp[3] = Wire.read();
+
+    // Sanity check to make sure I2C data hasn't gone out of sync
+    if((temp[2] == 0 || temp[2] == 255) && (temp[3] == 0 || temp[3] == 255)){
+      leftLineSensor = temp[0];
+      rightLineSensor = temp[1];
+
+      leftCollide = !!temp[2];
+      rightCollide = !!temp[3];
+    }
+  }
+}
+
 void Mirobot::sensorNotifier(){
-  /*
   if(collideNotify){
-    boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
-    boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-    char currentCollideState = collideRight | (collideLeft << 1);
+    readADC();
+    char currentCollideState = rightCollide | (leftCollide << 1);
     if(currentCollideState != lastCollideState){
-      if(collideLeft && collideRight){
+      if(leftCollide && rightCollide){
         manager.collideNotify("both");
-      }else if(collideLeft){
+      }else if(leftCollide){
         manager.collideNotify("left");
-      }else if(collideRight){
+      }else if(rightCollide){
         manager.collideNotify("right");
       }
       lastCollideState = currentCollideState;
     }
   }
   if(followNotify){
-    int currentFollowState = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+    readADC();
+    int currentFollowState = leftLineSensor - rightLineSensor;
     if(currentFollowState != lastFollowState){
       manager.followNotify(currentFollowState);
     }
     lastFollowState = currentFollowState;
   }
-  */
 }
 
 // This allows for runtime configuration of which hardware is used
