@@ -25,7 +25,7 @@
 
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "2.0.5"
+#define MIROBOT_VERSION "2.0.6"
 
 #define EEPROM_OFFSET 16
 #define MAGIC_BYTE_1 0xF0
