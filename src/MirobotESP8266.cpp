@@ -9,6 +9,9 @@ ShiftStepper motor2(1);
 MirobotWifi wifi;
 
 CmdManager manager;
+
+WS2812B led(LED_PIN);
+
 static char tmpBuff[10];
 
 Mirobot::Mirobot(){
@@ -387,9 +390,8 @@ void Mirobot::collideHandler(){
 }
 
 void Mirobot::ledHandler(){
-  long t = millis();
-  //digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
-  //digitalWrite(STATUS_LED, HIGH);
+  uint8_t val = (abs((millis() % (uint32_t)LED_PULSE_TIME) - LED_PULSE_TIME/2) / (LED_PULSE_TIME/2)) * 50;
+  led.setRGBA(LED_COLOUR_NORMAL, val);
 }
 
 void Mirobot::servoHandler(){

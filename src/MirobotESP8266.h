@@ -5,6 +5,7 @@
 #include "lib/ShiftStepper.h"
 #include "lib/CmdManager.h"
 #include "lib/MirobotWifi.h"
+#include "lib/WS2812B.h"
 #include "Wire.h"
 #include <EEPROM.h>
 
@@ -28,6 +29,8 @@ struct CmdResult;
 #define STEPS_PER_MM_V2      STEPS_PER_TURN / CIRCUMFERENCE_MM_V2
 #define STEPS_PER_DEGREE_V2  ((WHEEL_DISTANCE_V2 * 3.1416) / 360) * STEPS_PER_MM_V2
 
+
+#define SERVO_PIN 4
 #define SERVO_PULSES 15
 
 #define NOTE_C4  262
@@ -43,11 +46,13 @@ struct CmdResult;
 
 #define EEPROM_OFFSET 16
 
-#define SERVO_PIN 4
-
 #define SPEAKER_PIN 5
 
 #define LINE_LED_ENABLE 16
+
+#define LED_PIN 15
+#define LED_PULSE_TIME 6000.0
+#define LED_COLOUR_NORMAL 0xFFFFFF
 
 #define PCF8591_ADDRESS B1001000
 #define I2C_DATA  0
