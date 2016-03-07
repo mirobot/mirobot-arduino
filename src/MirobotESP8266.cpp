@@ -30,11 +30,14 @@ void Mirobot::begin(){
   setPenState(UP);
   // Set up the status LED
   //pinMode(STATUS_LED, OUTPUT);
+  // Set up the line follower LED enable pin
+  pinMode(LINE_LED_ENABLE, OUTPUT);
+  // Initialise the settings
   initSettings();
   // Set up the commands for the command manager
   initCmds();
   // Set up the I2C lines for the ADC
-  Wire.begin(2, 0);
+  Wire.begin(I2C_DATA, I2C_CLOCK);
 }
 
 void Mirobot::enableSerial(){
@@ -133,6 +136,8 @@ void Mirobot::_followState(char &arg, char &msg){
 
 void Mirobot::_followNotify(char &arg, char &msg){
   followNotify = !!strcmp(&arg, "false");
+  // Turn the LEDs on or off
+  digitalWrite(LINE_LED_ENABLE, followNotify);
 }
 
 void Mirobot::_slackCalibration(char &arg, char &msg){

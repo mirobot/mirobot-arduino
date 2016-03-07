@@ -34,28 +34,24 @@ struct CmdResult;
 
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
-/*
+
 #define SHIFT_REG_DATA  12
 #define SHIFT_REG_CLOCK 13
 #define SHIFT_REG_LATCH 14
-*/
-#define SHIFT_REG_DATA  13
-#define SHIFT_REG_CLOCK 12
-#define SHIFT_REG_LATCH 14
-
-//#define STATUS_LED 13
 
 #define MIROBOT_VERSION "3.0.5"
 
 #define EEPROM_OFFSET 16
 
-#define SERVO_PIN 15
+#define SERVO_PIN 4
 
-#define SPEAKER_PIN 16
+#define SPEAKER_PIN 5
+
+#define LINE_LED_ENABLE 16
 
 #define PCF8591_ADDRESS B1001000
-#define I2C_DATA 2
-#define I2C_CLOCK 0
+#define I2C_DATA  0
+#define I2C_CLOCK 2
 
 //#define LEFT_COLLIDE_SENSOR  14
 //#define RIGHT_COLLIDE_SENSOR 13
