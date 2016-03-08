@@ -20,12 +20,11 @@ MirobotWifi::MirobotWifi() {
 }
 
 void MirobotWifi::begin(){
-  uint8_t mac[6];
-  
   // Put the WiFi into AP_STA mode for 10 seconds
   WiFi.mode(WIFI_AP_STA);
   
   setupAP();
+  setupDNS();
   setupSTA();
 
   webServer = MirobotWeb();
@@ -47,9 +46,14 @@ void MirobotWifi::setupSTA(){
   WiFi.begin("***", "********");
 }
 
+void MirobotWifi::setupDNS(){
+  dnsServer.start(53, "local.mirobot.io", IPAddress(192, 168, 4, 1));
+}
+
 void MirobotWifi::run(){
   if(!enabled) return;
   webServer.run();
+  dnsServer.processNextRequest();
 }
 
 #endif

@@ -5,6 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include "lib/MirobotWeb.h"
+#include <DNSServer.h>
 
 class MirobotWifi {
   public:
@@ -15,8 +16,10 @@ class MirobotWifi {
     bool enabled;
     char hostname[14];
     MirobotWeb webServer;
+    DNSServer dnsServer;
     void setupAP();
     void setupSTA();
+    void setupDNS();
 };
 
 #endif
