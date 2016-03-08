@@ -31,8 +31,6 @@ void Mirobot::begin(){
   _collideStatus = NORMAL;
   // Start the pen arm in the up state
   setPenState(UP);
-  // Set up the status LED
-  //pinMode(STATUS_LED, OUTPUT);
   // Set up the line follower LED enable pin
   pinMode(LINE_LED_ENABLE, OUTPUT);
   // Initialise the settings
@@ -521,6 +519,7 @@ void Mirobot::process(){
   sensorNotifier();
   checkReady();
   manager.process();
+  wifi.run();
 }
 
 #endif

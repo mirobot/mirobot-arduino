@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Mirobot Control</title>
+  <meta name="viewport" content="width=900, user-scalable=no">
+  <style>
+    body {
+      background-color: #fff;
+      font-family: sans-serif;
+    }
+    a{
+      color:#333;
+    }
+    #configure{ display:none}
+    #menu li{
+      display:inline-block;
+      list-style-type:none;
+      border:1px solid #888;
+      padding:10px;
+      background-color: #EEE;
+    }
+    #menu li a{
+      text-decoration:none;
+      color:#333;
+    }
+    #menu li.selected{
+      background-color:#FFF;
+    }
+    .editor{
+      display:block;
+      min-width:600px;
+    }
+    .editor ol{
+      list-style-type:none;
+      padding:0;
+      margin:0;
+    }
+    .editor .left{
+      width:300px;
+      float: left;
+    }
+    .editor .functionList{
+      vertical-align:top;
+      background:#EEE;
+      border:1px solid #888;
+      padding:10px;
+    }
+    .editor input[type='number']{
+      width:50px;
+    }
+    .editor .container h2{
+      background:#888;
+      padding:5px;
+      margin:0;
+      color:#FFF;
+    }
+    .editor .right{
+      border:1px solid #888;
+      margin-left:310px;
+      max-width:600px;
+      position:relative;
+    }
+    .editor .buttons{
+      position:absolute;
+      padding:0;
+      bottom:0;
+      width:100%;
+    }
+    .editor .programWrapper{
+      overflow:auto;
+    }
+    .editor .buttons button{
+      color:#FFF;
+      font-size:1.5em;
+      padding:5px;
+      height:40px;
+      vertical-align:top;
+      border:none;
+      width:33.33%;
+      font-weight:bold;
+      margin:0;
+      background:#BBB;
+    }
+    .editor .buttons button:focus{
+      outline-width: 0;
+    }
+    .editor .buttons .run{
+      background-color:#33D121;
+    }
+    .editor .buttons .run:hover{
+      background-color:#2CAD1D;
+    }
+    .editor .buttons .run:active{
+      background-color:#218216;
+    }
+    .editor .buttons .stop{
+      background-color:#888;
+    }
+    .editor .buttons .stop:hover{
+      background-color:#444;
+    }
+    .editor .buttons .stop:active{
+      background-color:#000;
+    }
+    .editor .buttons .clear{
+      background-color:#AAA;
+    }
+    .editor .buttons .clear:hover{
+      background-color:#777;
+    }
+    .editor .buttons .clear:active{
+      background-color:#444;
+    }
+    .editor .buttons .disabled{
+      background-color:#BBB;
+    }
+    .editor .buttons .disabled:hover{
+      background-color:#BBB;
+    }
+    .editor .program{
+      overflow:hidden;
+      min-width:300px;
+      min-height:100%;
+      vertical-align:top;
+      padding:10px;
+    }
+    .editor .program .hint{
+      text-align:center;
+      border:1px dashed #888;
+      display:block;
+      padding:10px;
+      min-height:1.5em;
+      color:#CCC;
+    }
+    .editor .functionList .hint{
+      display:none;
+    }
+    .editor .programWrapper{
+      overflow:auto;
+    }
+    .editor .function{
+      background:#FFF;
+      border:1px solid #888;
+      padding:10px;
+      min-height:1.5em;
+    }
+    .editor .program .function.running{
+      background:#F00;
+    }
+    .editor .functionList .function{
+      -webkit-box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
+      -moz-box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
+      box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
+      margin:0 0 10px;
+    }
+    .editor .fn-repeat ol{
+      min-height:1.5em;
+      border:1px solid #888;
+    }
+    .editor .dragged {
+      position: absolute;
+      opacity: 0.5;
+      z-index: 2000;
+    }
+    .editor .placeholder {
+      position: relative;
+      border:1px dashed #888;
+      display:block;
+      padding:10px;
+      min-height:1.5em;
+    }
+    .editor ol.program li.function.active{
+      background-color:#0F0;
+    }
+    body.dragging, body.dragging * {
+      cursor: move !important;
+    }
+    .connState{
+      position:absolute;
+      right:10px;
+      color:#D12121;
+    }
+    .connState.connected{
+      color:#33D121;
+    }
+    .connState.initial{
+      color:#666;
+    }
+    #miroConnState{
+      top:50px;
+    }
+    #wifiConnState{
+      top:25px;
+    }
+    #wifiConnState.connected{
+      text-decoration:none;
+    }
+    #wifiConnState.connected:hover{
+      text-decoration:underline;
+    }
+    #header{
+      padding:10px 0;
+      margin:0 0 10px;
+      border-bottom: 1px solid #BBB;
+    }
+    
+    .modal{
+      position:absolute;
+      top:0;
+      left:0;
+    }
+    .modal{
+      background-color:rgba(0,0,0,0.5);
+      width:100%;
+      height:100%;
+      text-align:center;
+      z-index:100000;
+    }
+    .modal .content{
+      background-color:#FFF;
+      width:400px;
+      margin:30px auto;
+      padding:10px;
+      border:5px solid #999;
+      text-align:center;
+    }
+    #configFrame .content input[type=text],#configFrame .content input[type=password]{
+      width:200px;
+    }
+    #configFrame .content td{
+      text-align:right;
+      padding:4px;
+    }
+    #configFrame .content td.left{
+      text-align:left;
+    }
+    #configFrame iframe{
+      width:400px;
+      height:500px;
+      border:none;
+    }
+    #version{
+      font-size:75%;
+      color:#CCC;
+      position:absolute;
+      bottom:5px;
+      right:10px;
+    }
+    #version a{
+      color:#888;
+      text-decoration:none;
+    }
+    .editor .extra{
+      padding:10px;
+    }
+    .editor .extra button{
+      display:block;
+      margin:0 0 10px 0;
+      background: #FFF;
+      border: 1px #888 solid;
+      padding:5px;
+      min-width:160px;
+      text-align:center;
+      min-height:3em;
+    }
+    .editor .extra button:active{
+      background: #DDD;
+    }
+    .editor .extra button:hover{
+      background: #EEE;
+    }
+    .editor .extra button:focus{
+      outline: 0;
+    }
+    #configIframe{
+      border:none;
+      display:hidden;
+      position:absolute;
+      top:0;
+      left:0;
+      width:1px;
+      height:1px;
+    }
+  </style>
+</head>
+<body>
+  <div id="header">
+    <img src="logo.png">
+    <a href="#" id="wifiConnState" class="connState"></a>
+    <span id="miroConnState" class="connState initial">Connecting to Mirobot</span>
+    <span id="version"></span>
+  </div>
+  <div id="configFrame" class="modal" style="display:none">
+    <div class="content" id="configContent">
+      <iframe src=""></iframe>
+    </div>
+  </div>
+  <div id="wsMsg" class="modal" style="display:none">
+    <div class="content">
+      <h3>Your browser does not support Mirobot</h3>
+      <p>Mirobot uses a feature called WebSockets in order to control it from your browser.</p>
+      <p>Unfortunately your web browser does not support this.</p>
+      <p>Any recent version of the major browsers should work without problems. If you're not sure what to use, <a href="https://www.google.com/chrome/browser/">Google Chrome</a> is a good start.</p>
+    </div>
+  </div>
+  <div id="code"></div>
+  <script type="text/javascript" src="snack.js"></script>
+  <script type="text/javascript" src="mirobot.js"></script>
+  <script type="text/javascript" src="builder.js"></script>
+  <script type="text/javascript" src="snack.sortableList.js"></script>
+  <script type="text/javascript">
+    var wirelessConfig = {"clientSSID":"`clientSSID`","wifiMode":"`wifiMode`","clientIp":"`clientIp`","clientGateway":"`clientGateway`","clientNetmask":"`clientNetmask`","clientDhcp":"`clientDhcp`","clientMac":"`clientMac`","clientConnected":"`clientConnected`","APAuth":"`APAuth`","APChannel":"`APChannel`","APSSID":"`APSSID`"};
+    var versions = {wifi:"`version`",arduino:undefined,ui:'{{version}}'};
+    if(wirelessConfig.clientSSID.indexOf('clientSSID') > -1){
+      wirelessConfig = {"clientSSID":"foo","wifiMode":"3","clientIp":"192.168.1.100","clientGateway":"192.168.1.1","clientNetmask":"255.255.255.0","clientDhcp":"true","clientMac":"10:20:30:40:50:60","clientConnected":"0","APAuth":"0","APChannel":"6","APSSID":"Mirobot-abcd"};
+      versions.wifi = '2.0.0';
+    }
+    if(versions.ui.indexOf('version') >= 0) versions.ui = '2.0.0';
+    
+    var $;
+    var has_remote_conn = true;
+    var remote_base = 'http://mirobot.io/assets/mirobot_js/';
+    var hashConfig = {};
+    var mirobot;
+
+    if(window.location.hash !== ''){
+      window.location.hash.replace('#', '').split('&').map(function(el){
+        var split = el.split('=');
+        hashConfig[split[0]] = split[1];
+      });
+    }
+
+    // load script function with callback to handle synchronicity 
+    var loadScript = function( src, script, base_url, callback, errback ){
+      var loaded = false;
+      var errored = false;
+      var timeout;
+      script = document.createElement('script');
+      var noload = function(err) {
+        // handling error when loading script
+        if(!loaded && !errored && errback){
+          errback();
+        }
+        errored = true;
+      }
+      script.onerror = noload
+      script.onload = function(){
+        loaded = true;
+        delete timeout;
+        callback();
+      }
+      script.src = base_url + src;
+      document.getElementsByTagName('head')[0].appendChild(script);
+      window.setTimeout(noload, 3000);
+    }
+
+    // In case console logging kills the browser
+    if(typeof window.console === 'undefined'){ window.console = {log: function(){}}; }
+
+    var localApp = function(){
+      console.log('Loading local app');
+
+      has_remote_conn = false;
+      var configTimeout;
+
+      var el = function(id){
+        return document.getElementById(id);
+      }
+
+      var qs = function(s){
+        return document.querySelector(s);
+      }
+
+      var qsa = function(s){
+        return document.querySelectorAll(s);
+      }
+
+      var hideModal = function(modal){
+        el(modal).style.display = 'none';
+        // unbind the event
+        document.body.onkeyup = undefined;
+      }
+
+      updateWirelessConfig = function(config){
+        wirelessConfig = config;
+
+        var conn = el('wifiConnState');
+        if(wirelessConfig.clientConnected === '0' || wirelessConfig.clientIp === '0.0.0.0'){
+          conn.innerHTML = '&#10007; Configure WiFi';
+          conn.className = 'connState';
+          checkConfig(10000);
+        }else{
+          conn.innerHTML = '&#10003; Connected to WiFi';
+          conn.className = 'connState connected';
+          checkConfig(60000);
+        }
+      }
+
+      window.hideWiFiConfig = function(){
+        hideModal('configFrame');
+        checkConfig(10000);
+      }
+
+      var escEvent = function(event, modal){
+        if (event.which === 27) { // 27 == "esc"
+          // hide the dialog
+          hideModal(modal);
+        }
+      }
+
+      var showModal = function(src){
+        qs('#configContent iframe').src = src;
+        el('configFrame').style.display = 'block';
+        el('configContent').onclick = function(e){e.stopPropagation()};
+        el('configFrame').onclick = function(){hideModal('configFrame');checkConfig();};
+        document.body.onkeyup = function(e){ escEvent(e, 'configFrame');checkConfig();};
+      }
+
+      var configureWifi = function(e){
+        e.preventDefault();
+        showModal('/admin/wifi.html?arduino=' + versions.arduino);
+      }
+
+      var updateFirmware = function(e){
+        e.preventDefault();
+        if(has_remote_conn) showModal('/admin/update.html?arduino=' + versions.arduino);
+      }
+
+      var setVersions = function(){
+        var versionString = '<a href="#">WiFi version: ' + versions.wifi + " | Firmware version: " + (versions.arduino || 'unknown') + " | UI version: " + versions.ui + '</a>';
+        el('version').innerHTML = versionString;
+        qs('#version a').onclick = updateFirmware
+      }
+
+      var getVersion = function(){
+        mirobot.version(function(state, msg){
+          if(msg.msg){
+            versions.arduino = msg.msg;
+          }
+          setVersions();
+        });
+      }
+
+      var initProgram = function(){
+        var host = hashConfig['m'] || window.location.hostname;
+        mirobot = new Mirobot('ws://' + host + ':8899/websocket');
+        var builder = new Builder($('#code'), mirobot);
+
+        var mirobotHandler = function(state){
+          var conn = $('#miroConnState');
+          if(state === 'connected'){
+            if(!versions.arduino){
+              window.setTimeout(getVersion, 1000);
+            }
+            conn[0].innerHTML = '&#10003; Connected to Mirobot';
+            conn.addClass('connected');
+          }else if(state === 'disconnected'){
+            if(mirobot.error){
+              conn[0].innerHTML = '&#10007; Too many connections to Mirobot';
+            }else{
+              conn[0].innerHTML = '&#10007; Couldn\'t connect to Mirobot';
+            }
+            conn.removeClass('connected');
+          }else if(state === 'error'){
+            conn[0].innerHTML = '&#10007; Too many connections to Mirobot';
+            conn.removeClass('connected');
+          }
+          conn.removeClass('initial');
+        }
+        mirobot.addListener(mirobotHandler);
+      }
+
+      var checkConfig = function(delay){
+        var fn = function(){
+          var xhr = new XMLHttpRequest();
+          xhr.open('get', '/admin/settings.json', true);
+          xhr.onreadystatechange = function() {
+            var data;
+            if (xhr.readyState == 4 && xhr.status == 200) {
+              updateWirelessConfig(JSON.parse(xhr.responseText));
+            }
+          };
+          xhr.send();
+        }
+        if(delay){
+          if(configTimeout) window.clearTimeout(configTimeout);
+          configTimeout = window.setTimeout(fn, delay);
+        }else{
+          fn();
+        }
+      }
+
+      $ = snack.wrap;
+      initProgram();
+      updateWirelessConfig(wirelessConfig);
+      el('wifiConnState').onclick = configureWifi;
+      setVersions();
+
+      if(hashConfig['l'] !== 'true' && window.location.hostname != '10.10.100.254'){
+        // Useful in the future for adding functionality without upgrades
+        loadScript('remote2.js', undefined, remote_base, function(){
+          has_remote_conn = true;
+        });
+      }
+    }
+
+    if(typeof(WebSocket) !== "undefined"){
+      window.addEventListener('load', localApp);
+    }else{
+      document.getElementById('wsMsg').style.display = 'block';
+    }
+
+  </script>
+</body>
+</html>
