@@ -22,7 +22,7 @@ class MirobotRequestHandler : public RequestHandler {
       bool found = false;
       if (!canHandle(requestMethod, requestUri)) return false;
       for(i=0; i<fileCount; i++){
-        if(requestUri == files[i].filename){
+        if(requestUri == files[i].filename || requestUri + "index.html" == files[i].filename){
           server.send_P(200, files[i].mime, files[i].content, files[i].len);
           found = true;
           break;
