@@ -55,159 +55,92 @@ boolean CmdManager::processLine(){
 }
 
 boolean CmdManager::processJSON(){
-  char cmd[20], arg[11], id[11];
+  const char* cmd;
+  const char* id;
+  const char* arg;
+  int cmd_num, i;
+  StaticJsonBuffer<300> incomingBuffer;
+  StaticJsonBuffer<300> outgoingBuffer;
+  JsonObject& outMsg = outgoingBuffer.createObject();
+  
   if(input_buffer_pos > 0 && input_buffer[0] == '{' && input_buffer[input_buffer_pos - 1] == '}'){
-    extractAttr("cmd", input_buffer, cmd, 20);
-    extractAttr("arg", input_buffer, arg, 10);
-    extractAttr("id", input_buffer, id, 10);
-    processCmd(*cmd, *arg, *id);
-    return true;
+    JsonObject& inMsg = incomingBuffer.parseObject(input_buffer);
+    if(inMsg.success()){
+      // Extract the command
+      if(!inMsg.containsKey("cmd")) return false;
+      cmd = inMsg["cmd"];
+
+      // Extract the ID
+      if(inMsg.containsKey("id")){
+        id = inMsg["id"];
+      }else{
+        id = "";
+      }
+
+      // Find the command
+      cmd_num = -1;
+      for(i = 0; i < cmd_counter; i++){
+        if(!strcmp(cmd, _cmds[i].cmd)){
+          cmd_num = i;
+          break;
+        }
+      }
+
+      // Process the command
+      if(cmd_num >= 0){
+        if(_cmds[cmd_num].immediate){
+          (_m->*(_cmds[cmd_num].func))(inMsg, outMsg);
+          sendResponse("complete", outMsg, *id);
+        }else{
+          if(in_process){
+            // the previous command hasn't finished, send an error
+            outMsg["msg"] = "Previous command not finished";
+            sendResponse("error", outMsg, *id);
+          }else{
+            (_m->*(_cmds[cmd_num].func))(inMsg, outMsg);
+            strcpy(current_id, (char*)id);
+            in_process = true;
+            sendResponse("accepted", outMsg, *id);
+          }
+        }
+      }else{
+        // the command isn't recognised, send an error
+        outMsg["msg"] = "Command not recognised";
+        sendResponse("error", outMsg, *id);
+      }
+      
+      return true;
+    }
   }
   return false;
-}
-
-void CmdManager::processCmd(char &cmd, char &arg, char &id){
-  int cmd_num, i;
-  char msg[41] = {0,};
-  
-  cmd_num = -1;
-  for(i = 0; i < cmd_counter; i++){
-    if(!strcmp(&cmd, _cmds[i].cmd)){
-      cmd_num = i;
-      break;
-    }
-  }
-
-  if(cmd_num >= 0){
-    if(_cmds[cmd_num].immediate){
-      (_m->*(_cmds[cmd_num].func))(arg, *msg);
-      sendResponse("complete", msg, id);
-    }else{
-      if(in_process){
-        // the previous command hasn't finished, send an error
-        sendResponse("error", "Previous command not finished", id);
-      }else{
-        (_m->*(_cmds[cmd_num].func))(arg, *msg);
-        strcpy(current_id, &id);
-        in_process = true;
-        sendResponse("accepted", msg, id);
-      }
-    }
-  }else{
-    // the command isn't recognised, send an error
-    sendResponse("error", "Command not recognised", id);
-  }
 }
 
 void CmdManager::sendComplete(){
   if(in_process){
     in_process = false;
-    sendResponse("complete", "", *current_id);
+    StaticJsonBuffer<60> outgoingBuffer;
+    JsonObject& outMsg = outgoingBuffer.createObject();
+    sendResponse("complete", outMsg, *current_id);
   }
 }
 
-void CmdManager::sendResponse(const char status[], const char msg[], char &id){
-  //Calculate the length of the message for websockets and chunked encoding
-  unsigned char len = 13 + strlen(status);
-  if(strcmp(msg, "")){ len += 10 + strlen(msg); }
-  if(strcmp(&id, "")){ len += 9  + strlen(&id); }
-  
-  _s->print("{\"status\":\"");
-  _s->print(status);
-  _s->print("\"");
-
-  if(strcmp(msg, "")){
-    _s->print(", \"msg\":\"");
-    _s->print(msg);
-    _s->print("\"");
-  }
-  if(strcmp(&id, "")){
-    _s->print(", \"id\":\"");
-    _s->print(&id);
-    _s->print("\"");
-  }
-  _s->print("}");
-  _s->print("\r\n");
+void CmdManager::sendResponse(const char status[], ArduinoJson::JsonObject &outMsg, const char &id){
+  outMsg["id"] = &id;
+  outMsg["status"] = status;
+  outMsg.printTo(*_s);
+  _s->println("");
 }
 
 void CmdManager::collideNotify(const char state[]){
-  sendResponse("notify", state, (char &)"collide");
+  StaticJsonBuffer<60> outgoingBuffer;
+  JsonObject& outMsg = outgoingBuffer.createObject();
+  outMsg["msg"] = state;
+  sendResponse("notify", outMsg, (char &)"collide");
 }
 
 void CmdManager::followNotify(int state){
-  char sensorState[6];
-  sprintf(sensorState, "%d", state);
-  sendResponse("notify", sensorState, (char &)"follow");
-}
-
-//This is a very naive JSON parser which will extract the value of a specific attribute
-//It puts a string into the output buffer. Examples of extracting attr:
-//  {"attr":"one"} => "one"
-//  {"attr":1}     => "1"
-//  {"attr":[1, 2]} => "1,2"
-//  {"attr":["one",2] "one,2"
-void CmdManager::extractAttr(const char attr[], char *json, char *output, char len){
-  jsonParseState_t parseState = JSON_EXPECT_JSON_ATTR;
-  char attrPos = 0;
-  boolean match = false;
-  boolean in_brackets = false;
-  boolean in_quotes = false;
-  
-  while(*json != '\0'){
-    switch(parseState){
-      case JSON_EXPECT_JSON_ATTR:
-        if(*json == '"'){
-          parseState = JSON_ATTR;
-          attrPos = 0;
-        }
-        break;
-      case JSON_ATTR:
-        if(*json == '"'){
-          *json++;
-          while((*json == ':' || *json == ' ') && *json != '\0'){
-            *json++;
-          }
-          parseState = JSON_VAL;
-        }else{
-          //check the attribute
-          if(attr[attrPos] == *json){
-            attrPos++;
-            if(attr[attrPos] == '\0'){
-              match = true;
-            }
-          }
-          break;
-        }
-      case JSON_VAL:
-        if(!in_quotes && !in_brackets && *json == '['){
-          in_brackets = true;
-        }else if(!in_quotes && *json == '"'){
-          in_quotes = true;
-        }else if(!in_quotes && in_brackets && *json == ']'){
-          in_brackets = false;
-        }else if(in_quotes && *json == '"'){
-          in_quotes = false;
-        }else if(!in_quotes && in_brackets && *json == ' '){
-        }else if(!in_quotes && !in_brackets && (*json == ',' || *json == ' ' || *json == '}')){
-          if(match){
-            *output = '\0';
-            return;
-          }else{
-            parseState = JSON_EXPECT_JSON_ATTR;
-          }
-        }else{
-          //copy the attribute if it's a match
-          if(match){
-            *output = *json;
-            *output++;
-            if(!--len){
-              *output = '\0';
-              return;
-            }
-          }
-        }
-        break;
-    }
-    *json++;
-  }
+  StaticJsonBuffer<60> outgoingBuffer;
+  JsonObject& outMsg = outgoingBuffer.createObject();
+  outMsg["msg"] = state;
+  sendResponse("notify", outMsg, (char &)"follow");
 }

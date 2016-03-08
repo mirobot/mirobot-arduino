@@ -7,13 +7,14 @@ class Mirobot;
 class CmdManager;
 
 #include "Mirobot.h"
+#include "./lib/ArduinoJson/ArduinoJson.h"
 
 #define INPUT_BUFFER_LENGTH 180
 #define CMD_COUNT 30
 
 typedef enum {JSON_EXPECT_JSON_ATTR, JSON_ATTR, JSON_JSON_DELIM, JSON_VAL} jsonParseState_t;
 
-typedef void (Mirobot::*MirobotMemFn)(char &, char &);
+typedef void (Mirobot::*MirobotMemFn)(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
 typedef void (* fp) (void *, char *);
 typedef boolean (* fp_ready) (void *);
 
@@ -36,10 +37,9 @@ class CmdManager {
     boolean in_process;
   private:
     boolean processLine();
-    void extractAttr(const char attr[4], char *json, char *output, char len);
-    void processCmd(char &cmd, char &arg, char &id);
+    void processCmd(const char &cmd, const char &arg, const char &id);
     void runCmd(char &cmd, char &arg, char &id);
-    void sendResponse(const char state[], const char msg[], char &id);
+    void sendResponse(const char state[], ArduinoJson::JsonObject &, const char &id);
     Stream* _s;
     char webSocketKey[61];
     char input_buffer[INPUT_BUFFER_LENGTH];

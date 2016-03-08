@@ -101,104 +101,104 @@ void Mirobot::initSettings(){
 }
 
 
-void Mirobot::_version(char &arg, char &msg){
-  strcpy(&msg, MIROBOT_VERSION);
+void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = MIROBOT_VERSION;
 }
 
-void Mirobot::_ping(char &arg, char &msg){}
+void Mirobot::_ping(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){}
 
-void Mirobot::_uptime(char &arg, char &msg){
-  sprintf(&msg, "%lu", millis());
+void Mirobot::_uptime(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = millis();
 }
 
-void Mirobot::_pause(char &arg, char &msg){
+void Mirobot::_pause(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   pause();
 }
 
-void Mirobot::_resume(char &arg, char &msg){
+void Mirobot::_resume(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   resume();
 }
 
-void Mirobot::_stop(char &arg, char &msg){
+void Mirobot::_stop(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   stop();
 }
 
-void Mirobot::_collideState(char &arg, char &msg){
-  collideState(msg);
+void Mirobot::_collideState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  //collideState(msg);
 }
 
-void Mirobot::_collideNotify(char &arg, char &msg){
-  collideNotify = !!strcmp(&arg, "false");
+void Mirobot::_collideNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  collideNotify = !!strcmp(inJson["arg"], "false");
 }
 
-void Mirobot::_followState(char &arg, char &msg){
-  sprintf(&msg, "%d", followState());
+void Mirobot::_followState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  //sprintf(&msg, "%d", followState());
 }
 
-void Mirobot::_followNotify(char &arg, char &msg){
-  followNotify = !!strcmp(&arg, "false");
+void Mirobot::_followNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  followNotify = !!strcmp(inJson["arg"].asString(), "false");
   // Turn the LEDs on or off
   digitalWrite(LINE_LED_ENABLE, followNotify);
 }
 
-void Mirobot::_slackCalibration(char &arg, char &msg){
-  sprintf(&msg, "%d", settings.slackCalibration);
+void Mirobot::_slackCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = settings.slackCalibration;
 }
 
-void Mirobot::_moveCalibration(char &arg, char &msg){
-  dtostrf(settings.moveCalibration , 2, 6, &msg);
+void Mirobot::_moveCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = settings.moveCalibration;
 }
 
-void Mirobot::_turnCalibration(char &arg, char &msg){
-  dtostrf(settings.turnCalibration , 2, 6, &msg);
+void Mirobot::_turnCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = settings.turnCalibration;
 }
 
-void Mirobot::_calibrateMove(char &arg, char &msg){
-  calibrateMove(atof(&arg));
+void Mirobot::_calibrateMove(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  calibrateMove(atof(inJson["arg"].asString()));
 }
 
-void Mirobot::_calibrateTurn(char &arg, char &msg){
-  calibrateTurn(atof(&arg));
+void Mirobot::_calibrateTurn(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  calibrateTurn(atof(inJson["arg"].asString()));
 }
 
-void Mirobot::_forward(char &arg, char &msg){
-  forward(atoi(&arg));
+void Mirobot::_forward(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  forward(atoi(inJson["arg"].asString()));
 }
 
-void Mirobot::_back(char &arg, char &msg){
-  back(atoi(&arg));
+void Mirobot::_back(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  back(atoi(inJson["arg"].asString()));
 }
 
-void Mirobot::_right(char &arg, char &msg){
-  right(atoi(&arg));
+void Mirobot::_right(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  right(atoi(inJson["arg"].asString()));
 }
 
-void Mirobot::_left(char &arg, char &msg){
-  left(atoi(&arg));
+void Mirobot::_left(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  left(atoi(inJson["arg"].asString()));
 }
 
-void Mirobot::_penup(char &arg, char &msg){
+void Mirobot::_penup(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   penup();
 }
 
-void Mirobot::_pendown(char &arg, char &msg){
+void Mirobot::_pendown(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   pendown();
 }
 
-void Mirobot::_follow(char &arg, char &msg){
+void Mirobot::_follow(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   follow();
 }
 
-void Mirobot::_collide(char &arg, char &msg){
+void Mirobot::_collide(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   collide();
 }
 
-void Mirobot::_beep(char &arg, char &msg){
-  beep(atoi(&arg));
+void Mirobot::_beep(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  beep(atoi(inJson["arg"].asString()));
 }
 
-void Mirobot::_calibrateSlack(char &arg, char &msg){
-  calibrateSlack(atoi(&arg));
+void Mirobot::_calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  calibrateSlack(atoi(inJson["arg"].asString()));
 }
 
 void Mirobot::saveSettings(){

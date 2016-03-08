@@ -8,6 +8,7 @@
 #include "lib/WS2812B.h"
 #include "Wire.h"
 #include <EEPROM.h>
+#include "./lib/ArduinoJson/ArduinoJson.h"
 
 class CmdManager;
 struct CmdResult;
@@ -139,31 +140,31 @@ class Mirobot {
     long beepComplete;
     boolean calibratingSlack;
     void checkReady();
-    void _version(char &, char &);
-    void _ping(char &, char &);
-    void _uptime(char &, char &);
-    void _pause(char &, char &);
-    void _resume(char &, char &);
-    void _stop(char &, char &);
-    void _collideState(char &, char &);
-    void _collideNotify(char &, char &);
-    void _followState(char &, char &);
-    void _followNotify(char &, char &);
-    void _slackCalibration(char &, char &);
-    void _moveCalibration(char &, char &);
-    void _turnCalibration(char &, char &);
-    void _calibrateMove(char &, char &);
-    void _calibrateTurn(char &, char &);
-    void _forward(char &, char &);
-    void _back(char &, char &);
-    void _right(char &, char &);
-    void _left(char &, char &);
-    void _penup(char &, char &);
-    void _pendown(char &, char &);
-    void _follow(char &, char &);
-    void _collide(char &, char &);
-    void _beep(char &, char &);
-    void _calibrateSlack(char &, char &);
+    void _version(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _ping(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _uptime(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _pause(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _resume(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _stop(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collideState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collideNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _followState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _followNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _slackCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _moveCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _turnCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateMove(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateTurn(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _forward(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _back(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _right(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _left(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _penup(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _pendown(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _follow(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collide(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _beep(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateSlack(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void readADC();
     boolean leftCollide;
     boolean rightCollide;
