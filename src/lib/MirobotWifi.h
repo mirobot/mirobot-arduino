@@ -19,6 +19,7 @@ class MirobotWifi {
     static IPAddress getStaIp();
     static int32_t getStaRSSI();
     void setupWifi();
+    static bool networkChanged;
   private:
     bool enabled;
     MirobotWeb webServer;

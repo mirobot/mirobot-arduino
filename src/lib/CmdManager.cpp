@@ -121,8 +121,8 @@ boolean CmdManager::processJSON(){
 void CmdManager::sendComplete(){
   if(in_process){
     in_process = false;
-    StaticJsonBuffer<60> outgoingBuffer;
-    JsonObject& outMsg = outgoingBuffer.createObject();
+    StaticJsonBuffer<60> outBuffer;
+    JsonObject& outMsg = outBuffer.createObject();
     sendResponse("complete", outMsg, *current_id);
   }
 }
@@ -136,16 +136,6 @@ void CmdManager::sendResponse(const char status[], ArduinoJson::JsonObject &outM
   _s->println("");
 }
 
-void CmdManager::collideNotify(const char state[]){
-  StaticJsonBuffer<60> outgoingBuffer;
-  JsonObject& outMsg = outgoingBuffer.createObject();
-  outMsg["msg"] = state;
-  sendResponse("notify", outMsg, (char &)"collide");
-}
-
-void CmdManager::followNotify(int state){
-  StaticJsonBuffer<60> outgoingBuffer;
-  JsonObject& outMsg = outgoingBuffer.createObject();
-  outMsg["msg"] = state;
-  sendResponse("notify", outMsg, (char &)"follow");
+void CmdManager::notify(const char id[], ArduinoJson::JsonObject &outMsg){
+  sendResponse("notify", outMsg, *id);
 }

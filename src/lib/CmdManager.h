@@ -30,8 +30,7 @@ class CmdManager {
     void addCmd(const char cmd[], MirobotMemFn func, bool immediate);
     void addStream(Stream &s);
     void process();
-    void collideNotify(const char msg[]);
-    void followNotify(int state);
+    void notify(const char[], ArduinoJson::JsonObject &);
     void setMirobot(Mirobot &);
     void sendComplete();
     boolean in_process;

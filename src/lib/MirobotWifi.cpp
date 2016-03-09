@@ -3,14 +3,15 @@
 #include "Arduino.h"
 #include "MirobotWifi.h"
 
+bool MirobotWifi::networkChanged = false;
+
 void WiFiEvent(WiFiEvent_t event) {
   switch(event) {
     case WIFI_EVENT_STAMODE_GOT_IP:
-      Serial.print("WiFi connected - IP address: ");
-      Serial.println(WiFi.localIP());
+      MirobotWifi::networkChanged = true;
       break;
     case WIFI_EVENT_STAMODE_DISCONNECTED:
-      Serial.println("WiFi lost connection");
+      MirobotWifi::networkChanged = true;
       break;
   }
 }

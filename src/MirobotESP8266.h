@@ -126,6 +126,7 @@ class Mirobot {
     void servoHandler();
     void autoHandler();
     void sensorNotifier();
+    void networkNotifier();
     void checkState();
     void initCmds();
     void initSettings();

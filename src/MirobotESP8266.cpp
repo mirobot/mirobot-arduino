@@ -556,16 +556,21 @@ void Mirobot::readADC(){
 }
 
 void Mirobot::sensorNotifier(){
+  StaticJsonBuffer<60> outBuffer;
+  JsonObject& outMsg = outBuffer.createObject();
   if(collideNotify){
     readADC();
     char currentCollideState = rightCollide | (leftCollide << 1);
     if(currentCollideState != lastCollideState){
       if(leftCollide && rightCollide){
-        manager.collideNotify("both");
+        outMsg["msg"] = "both";
+        manager.notify("collide", outMsg);
       }else if(leftCollide){
-        manager.collideNotify("left");
+        outMsg["msg"] = "left";
+        manager.notify("collide", outMsg);
       }else if(rightCollide){
-        manager.collideNotify("right");
+        outMsg["msg"] = "right";
+        manager.notify("collide", outMsg);
       }
       lastCollideState = currentCollideState;
     }
@@ -574,10 +579,20 @@ void Mirobot::sensorNotifier(){
     readADC();
     int currentFollowState = leftLineSensor - rightLineSensor;
     if(currentFollowState != lastFollowState){
-      manager.followNotify(currentFollowState);
+      outMsg["msg"] = currentFollowState;
+      manager.notify("follow", outMsg);
     }
     lastFollowState = currentFollowState;
   }
+}
+
+void Mirobot::networkNotifier(){
+  if(!MirobotWifi::networkChanged) return;
+  StaticJsonBuffer<500> outBuffer;
+  JsonObject& outMsg = outBuffer.createObject();
+  MirobotWifi::networkChanged = false;
+  _getConfig(outMsg, outMsg);
+  manager.notify("network", outMsg);
 }
 
 // This allows for runtime configuration of which hardware is used
@@ -627,6 +642,7 @@ void Mirobot::process(){
   autoHandler();
   calibrateHandler();
   sensorNotifier();
+  networkNotifier();
   checkReady();
   manager.process();
   wifi.run();
