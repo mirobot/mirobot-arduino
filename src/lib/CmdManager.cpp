@@ -58,8 +58,8 @@ boolean CmdManager::processJSON(){
   const char* cmd;
   const char* id;
   int cmd_num, i;
-  StaticJsonBuffer<500> incomingBuffer;
-  StaticJsonBuffer<350> outgoingBuffer;
+  StaticJsonBuffer<INPUT_BUFFER_LENGTH> incomingBuffer;
+  StaticJsonBuffer<INPUT_BUFFER_LENGTH> outgoingBuffer;
   JsonObject& outMsg = outgoingBuffer.createObject();
   
   if(input_buffer_pos > 0 && input_buffer[0] == '{' && input_buffer[input_buffer_pos - 1] == '}'){

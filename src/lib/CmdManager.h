@@ -9,7 +9,7 @@ class CmdManager;
 #include "Mirobot.h"
 #include "./lib/ArduinoJson/ArduinoJson.h"
 
-#define INPUT_BUFFER_LENGTH 180
+#define INPUT_BUFFER_LENGTH 500
 #define CMD_COUNT 30
 
 typedef enum {JSON_EXPECT_JSON_ATTR, JSON_ATTR, JSON_JSON_DELIM, JSON_VAL} jsonParseState_t;
