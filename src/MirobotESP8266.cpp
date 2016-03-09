@@ -85,6 +85,7 @@ void Mirobot::initCmds(){
   manager.addCmd("getConfig",        &Mirobot::_getConfig,        true);
   manager.addCmd("setConfig",        &Mirobot::_setConfig,        true);
   manager.addCmd("resetConfig",      &Mirobot::_resetConfig,      true);
+  manager.addCmd("freeHeap",         &Mirobot::_freeHeap,         true);
 }
 
 void Mirobot::initSettings(){
@@ -304,6 +305,9 @@ void Mirobot::_resetConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObj
   saveSettings();
   initSettings();
   wifi.setupWifi();
+}
+void Mirobot::_freeHeap(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = ESP.getFreeHeap();
 }
 
 void Mirobot::saveSettings(){

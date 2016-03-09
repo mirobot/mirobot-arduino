@@ -179,6 +179,7 @@ class Mirobot {
     void _getConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _setConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _resetConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _freeHeap(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void readADC();
     boolean leftCollide;
     boolean rightCollide;
