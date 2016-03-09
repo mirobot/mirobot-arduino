@@ -3,18 +3,25 @@
 #include "Arduino.h"
 #include "MirobotWifi.h"
 
-Ticker tick;
+Ticker sta_tick;
+Ticker discovery_tick;
 
 bool MirobotWifi::networkChanged = false;
 MirobotSettings *MirobotWifi::settings;
 
+void send_discovery(){
+  send_discovery_request(WiFi.localIP(), MirobotWifi::settings->ap_ssid);
+}
+
 void WiFiEvent(WiFiEvent_t event) {
   switch(event) {
     case WIFI_EVENT_STAMODE_GOT_IP:
-      send_discovery_request(WiFi.localIP(), MirobotWifi::settings->ap_ssid);
+      send_discovery();
+      discovery_tick.attach(300, send_discovery);
       MirobotWifi::networkChanged = true;
       break;
     case WIFI_EVENT_STAMODE_DISCONNECTED:
+      discovery_tick.detach();
       MirobotWifi::networkChanged = true;
       break;
   }
@@ -82,7 +89,7 @@ void MirobotWifi::setupWifi(){
     // Set up the STA connection
     WiFi.begin(settings->sta_ssid, settings->sta_pass);
     // Check if it's connected after 10 seconds
-    tick.attach(10, MirobotWifi::staCheck);
+    sta_tick.attach(10, MirobotWifi::staCheck);
   }else{
     WiFi.mode(WIFI_AP);
   }
@@ -99,7 +106,7 @@ void MirobotWifi::run(){
 }
 
 void MirobotWifi::staCheck(){
-  tick.detach();
+  sta_tick.detach();
   if(!(uint32_t)WiFi.localIP()){
     WiFi.mode(WIFI_AP);
   }
