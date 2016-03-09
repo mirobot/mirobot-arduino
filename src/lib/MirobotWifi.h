@@ -5,20 +5,25 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include "lib/MirobotWeb.h"
+#include "MirobotESP8266.h"
 #include <DNSServer.h>
+
+struct MirobotSettings;
 
 class MirobotWifi {
   public:
     MirobotWifi();
-    void begin();
+    void begin(MirobotSettings *);
     void run();
+    static void defautAPName(char*);
+    static IPAddress getStaIp();
+    static int32_t getStaRSSI();
+    void setupWifi();
   private:
     bool enabled;
-    char hostname[14];
     MirobotWeb webServer;
     DNSServer dnsServer;
-    void setupAP();
-    void setupSTA();
+    MirobotSettings * settings;
     void setupDNS();
 };
 

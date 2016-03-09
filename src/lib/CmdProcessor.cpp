@@ -279,17 +279,6 @@ void CmdProcessor::processCmd(char &cmd, char &arg, char &id){
     _m->reset();
   }else if(!strcmp(&cmd, "version")){
     sendResponse("complete", MIROBOT_VERSION, id);
-  }else if(!strcmp(&cmd, "hwversion")){
-    if(!_m->settings.hwmajor && !_m->settings.hwminor){
-      sendResponse("complete", "unknown", id);
-    }else{
-      sprintf(tmpBuff, "%d.%d", _m->settings.hwmajor, _m->settings.hwminor);
-      sendResponse("complete", tmpBuff, id);
-    }
-  }else if(!strcmp(&cmd, "sethwversion")){
-    _m->setHwVersion(arg);
-    sprintf(tmpBuff, "%d.%d", _m->settings.hwmajor, _m->settings.hwminor);
-    sendResponse("complete", tmpBuff, id);
   }else if(!strcmp(&cmd, "pause")){
     _m->pause();
     sendResponse("complete", "", id);

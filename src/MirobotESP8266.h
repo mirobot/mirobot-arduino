@@ -1,3 +1,4 @@
+#ifdef ESP8266
 #ifndef __MirobotESP8266_h__
 #define __MirobotESP8266_h__
 
@@ -36,16 +37,16 @@ struct CmdResult;
 
 #define NOTE_C4  262
 
+#define EEPROM_OFFSET 0
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
+#define SETTINGS_VERSION 1
 
 #define SHIFT_REG_DATA  12
 #define SHIFT_REG_CLOCK 13
 #define SHIFT_REG_LATCH 14
 
-#define MIROBOT_VERSION "3.0.5"
-
-#define EEPROM_OFFSET 16
+#define MIROBOT_VERSION "3.0.0"
 
 #define SPEAKER_PIN 5
 
@@ -59,19 +60,29 @@ struct CmdResult;
 #define I2C_DATA  0
 #define I2C_CLOCK 2
 
-//#define LEFT_COLLIDE_SENSOR  14
-//#define RIGHT_COLLIDE_SENSOR 13
 
 typedef enum {UP, DOWN} penState_t;
 
 typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideStatus_t;
 
-struct Settings {
-  byte         hwmajor;
-  byte         hwminor;
+struct MirobotSettings {
+  uint8_t      settingsVersion;
   unsigned int slackCalibration;
   float        moveCalibration;
   float        turnCalibration;
+  char         sta_ssid[32];
+  char         sta_pass[64];
+  bool         sta_dhcp;
+  uint32_t     sta_fixedip;
+  uint32_t     sta_fixedgateway;
+  uint32_t     sta_fixednetmask;
+  uint32_t     sta_fixeddns1;
+  uint32_t     sta_fixeddns2;
+  char         ap_ssid[32];
+  char         ap_pass[64];
+  char         ap_auth_mode;
+  char         ap_channel;
+  bool         discovery;
 };
 
 class Mirobot {
@@ -103,7 +114,7 @@ class Mirobot {
     void calibrateMove(float);
     void calibrateTurn(float);
     char versionNum;
-    Settings settings;
+    MirobotSettings settings;
     boolean blocking;
     boolean collideNotify;
     boolean followNotify;
@@ -165,6 +176,9 @@ class Mirobot {
     void _collide(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _beep(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _calibrateSlack(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _getConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _setConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _resetConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void readADC();
     boolean leftCollide;
     boolean rightCollide;
@@ -173,4 +187,5 @@ class Mirobot {
     long nextADCRead;
 };
 
+#endif
 #endif

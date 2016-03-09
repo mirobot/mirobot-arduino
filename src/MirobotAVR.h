@@ -1,3 +1,4 @@
+#ifdef AVR
 #ifndef __MirobotAVR_h__
 #define __MirobotAVR_h__
 
@@ -123,4 +124,5 @@ class Mirobot {
     boolean calibratingSlack;
 };
 
+#endif
 #endif

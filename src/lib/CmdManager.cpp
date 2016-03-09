@@ -57,10 +57,9 @@ boolean CmdManager::processLine(){
 boolean CmdManager::processJSON(){
   const char* cmd;
   const char* id;
-  const char* arg;
   int cmd_num, i;
-  StaticJsonBuffer<300> incomingBuffer;
-  StaticJsonBuffer<300> outgoingBuffer;
+  StaticJsonBuffer<500> incomingBuffer;
+  StaticJsonBuffer<350> outgoingBuffer;
   JsonObject& outMsg = outgoingBuffer.createObject();
   
   if(input_buffer_pos > 0 && input_buffer[0] == '{' && input_buffer[input_buffer_pos - 1] == '}'){
@@ -110,6 +109,10 @@ boolean CmdManager::processJSON(){
       }
       
       return true;
+    }else{
+      //Error parsing
+      outMsg["msg"] = "JSON parse error";
+      sendResponse("error", outMsg, (const char &)"");
     }
   }
   return false;
@@ -125,7 +128,9 @@ void CmdManager::sendComplete(){
 }
 
 void CmdManager::sendResponse(const char status[], ArduinoJson::JsonObject &outMsg, const char &id){
-  outMsg["id"] = &id;
+  if(strlen(&id)){
+    outMsg["id"] = &id;
+  }
   outMsg["status"] = status;
   outMsg.printTo(*_s);
   _s->println("");

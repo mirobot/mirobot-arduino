@@ -50,7 +50,7 @@ void Mirobot::enableSerial(){
 }
 
 void Mirobot::enableWifi(){
-  wifi.begin();
+  wifi.begin(&settings);
 }
 
 void Mirobot::initCmds(){
@@ -82,20 +82,36 @@ void Mirobot::initCmds(){
   manager.addCmd("collide",          &Mirobot::_collide,          false);
   manager.addCmd("beep",             &Mirobot::_beep,             false);
   manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
+  manager.addCmd("getConfig",        &Mirobot::_getConfig,        true);
+  manager.addCmd("setConfig",        &Mirobot::_setConfig,        true);
+  manager.addCmd("resetConfig",      &Mirobot::_resetConfig,      true);
 }
 
 void Mirobot::initSettings(){
-  if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2){
+  EEPROM.begin(512);
+  if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2 && EEPROM.read(EEPROM_OFFSET + 2) == SETTINGS_VERSION){
     // We've previously written something valid to the EEPROM
     for (unsigned int t=0; t<sizeof(settings); t++){
       *((char*)&settings + t) = EEPROM.read(EEPROM_OFFSET + 2 + t);
     }
   }else{
-    settings.hwmajor = 0;
-    settings.hwminor = 0;
+    settings.settingsVersion = SETTINGS_VERSION;
     settings.slackCalibration = 14;
     settings.moveCalibration = 1.0f;
     settings.turnCalibration = 1.0f;
+    settings.sta_ssid[0] = 0;
+    settings.sta_pass[0] = 0;
+    settings.sta_dhcp = true;
+    settings.sta_fixedip = 0;
+    settings.sta_fixedgateway = 0;
+    settings.sta_fixednetmask = (uint32_t)IPAddress(255, 255, 255, 0);
+    settings.sta_fixeddns1 = 0;
+    settings.sta_fixeddns2 = 0;
+    MirobotWifi::defautAPName(settings.ap_ssid);
+    settings.ap_pass[0] = 0;
+    settings.ap_auth_mode = 0;
+    settings.ap_channel = 6;
+    settings.discovery = true;
     saveSettings();
   }
 }
@@ -201,12 +217,102 @@ void Mirobot::_calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::Json
   calibrateSlack(atoi(inJson["arg"].asString()));
 }
 
+void Mirobot::_getConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  JsonObject& msg = outJson.createNestedObject("msg");
+  msg["sta_ssid"] = settings.sta_ssid;
+  msg["sta_dhcp"] = settings.sta_dhcp;
+  msg["sta_rssi"] = MirobotWifi::getStaRSSI();
+  if(!settings.sta_dhcp){
+    msg["sta_fixedip"] = IPAddress(settings.sta_fixedip).toString();
+    msg["sta_fixedgateway"] = IPAddress(settings.sta_fixedgateway).toString();
+    msg["sta_fixednetmask"] = IPAddress(settings.sta_fixednetmask).toString();
+  }
+  msg["sta_ip"] = MirobotWifi::getStaIp().toString();
+  msg["ap_ssid"] = settings.ap_ssid;
+  msg["ap_encrypted"] = !!strlen(settings.ap_pass);
+  msg["ap_auth_mode"] = settings.ap_auth_mode;
+  msg["ap_channel"] = settings.ap_channel;
+  msg["discovery"] = settings.discovery;
+}
+
+void Mirobot::_setConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  IPAddress addr;
+  if(!(inJson.containsKey("arg") && inJson["arg"].is<JsonObject&>())) return;
+
+  // Set the SSID to connect to
+  if(inJson["arg"].asObject().containsKey("sta_ssid")){
+    strcpy(settings.sta_ssid, inJson["arg"]["sta_ssid"]);
+  }
+  // Set the password for the SSID
+  if(inJson["arg"].asObject().containsKey("sta_pass")){
+    strcpy(settings.sta_pass, inJson["arg"]["sta_pass"]);
+  }
+  // Change the name of the built in access point
+  if(inJson["arg"].asObject().containsKey("ap_ssid")){
+    strcpy(settings.ap_ssid, inJson["arg"]["ap_ssid"]);
+  }
+  // Set the password for the access point
+  if(inJson["arg"].asObject().containsKey("ap_pass")){
+    strcpy(settings.ap_pass, inJson["arg"]["ap_pass"]);
+  }
+  // Change the name of the built in access point
+  if(inJson["arg"].asObject().containsKey("ap_auth_mode")){
+    settings.ap_auth_mode = atoi(inJson["arg"]["ap_auth_mode"].asString());
+  }
+  // Set the channel to use for the access point
+  if(inJson["arg"].asObject().containsKey("ap_channel")){
+    settings.ap_channel = atoi(inJson["arg"]["ap_channel"].asString());
+  }
+  // Set whether to use DHCP
+  if(inJson["arg"].asObject().containsKey("sta_dhcp")){
+    settings.sta_dhcp = inJson["arg"]["sta_dhcp"];
+  }
+  // Use a fixed IP address
+  if(inJson["arg"].asObject().containsKey("sta_fixedip")){
+    addr.fromString(inJson["arg"]["sta_fixedip"].asString());
+    settings.sta_fixedip = addr;
+  }
+  // The DNS server to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixedgateway")){
+    addr.fromString(inJson["arg"]["sta_fixedgateway"].asString());
+    settings.sta_fixedgateway = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixednetmask")){
+    addr.fromString(inJson["arg"]["sta_fixednetmask"].asString());
+    settings.sta_fixednetmask = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixeddns1")){
+    addr.fromString(inJson["arg"]["sta_fixeddns1"].asString());
+    settings.sta_fixeddns1 = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixeddns2")){
+    addr.fromString(inJson["arg"]["sta_fixeddns2"].asString());
+    settings.sta_fixeddns2 = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("discovery")){
+    settings.discovery = inJson["arg"]["discovery"];
+  }
+  wifi.setupWifi();
+  saveSettings();
+}
+void Mirobot::_resetConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  settings.settingsVersion = 0;
+  saveSettings();
+  initSettings();
+  wifi.setupWifi();
+}
+
 void Mirobot::saveSettings(){
   EEPROM.write(EEPROM_OFFSET, MAGIC_BYTE_1);
   EEPROM.write(EEPROM_OFFSET + 1, MAGIC_BYTE_2);
   for (unsigned int t=0; t<sizeof(settings); t++){
     EEPROM.write(EEPROM_OFFSET + 2 + t, *((char*)&settings + t));
   }
+  EEPROM.commit();
 }
 
 void Mirobot::takeUpSlack(byte motor1Dir, byte motor2Dir){

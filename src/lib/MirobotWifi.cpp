@@ -4,46 +4,75 @@
 #include "MirobotWifi.h"
 
 void WiFiEvent(WiFiEvent_t event) {
-    switch(event) {
-        case WIFI_EVENT_STAMODE_GOT_IP:
-            Serial.print("WiFi connected - IP address: ");
-            Serial.println(WiFi.localIP());
-            break;
-        case WIFI_EVENT_STAMODE_DISCONNECTED:
-            Serial.println("WiFi lost connection");
-            break;
-    }
+  switch(event) {
+    case WIFI_EVENT_STAMODE_GOT_IP:
+      Serial.print("WiFi connected - IP address: ");
+      Serial.println(WiFi.localIP());
+      break;
+    case WIFI_EVENT_STAMODE_DISCONNECTED:
+      Serial.println("WiFi lost connection");
+      break;
+  }
 }
 
 MirobotWifi::MirobotWifi() {
   enabled = false;
 }
 
-void MirobotWifi::begin(){
-  // Put the WiFi into AP_STA mode for 10 seconds
-  WiFi.mode(WIFI_AP_STA);
+void MirobotWifi::begin(MirobotSettings * _settings){
+  settings = _settings;
+
+  // Subscribe to state change events
+  WiFi.onEvent(WiFiEvent);
   
-  setupAP();
+  setupWifi();
   setupDNS();
-  setupSTA();
 
   webServer = MirobotWeb();
 
 	enabled = true;
 }
 
-void MirobotWifi::setupAP(){
+void MirobotWifi::defautAPName(char *name){
   uint8_t mac[6];
-
-  // Set the hostname
   WiFi.softAPmacAddress(mac);
-  sprintf(hostname, "Mirobot-%02X%02X", mac[4], mac[5]);
-  WiFi.softAP(hostname);
+  sprintf(name, "Mirobot-%02X%02X", mac[4], mac[5]);
 }
 
-void MirobotWifi::setupSTA(){
-  WiFi.onEvent(WiFiEvent);
-  WiFi.begin("***", "********");
+IPAddress MirobotWifi::getStaIp(){
+  return WiFi.localIP();
+}
+
+int32_t MirobotWifi::getStaRSSI(){
+  return WiFi.RSSI();
+}
+
+void MirobotWifi::setupWifi(){
+  // Put the WiFi into AP_STA mode
+  WiFi.mode(WIFI_AP_STA);
+
+  // Reinitialise the WiFi
+  WiFi.disconnect();
+
+  // Set the hostname for DHCP
+  WiFi.hostname(settings->ap_ssid);
+
+  // Set up the access point
+  if(strlen(settings->ap_pass)){
+    WiFi.softAP(settings->ap_ssid, settings->ap_pass, settings->ap_channel);
+  }else{
+    WiFi.softAP(settings->ap_ssid, NULL, settings->ap_channel);
+  }
+
+  if(strlen(settings->sta_ssid)){
+    // Configure the fixed IP if we're not using DHCP
+    if(!settings->sta_dhcp && settings->sta_fixedip && settings->sta_fixedgateway && settings->sta_fixednetmask){
+      WiFi.config(IPAddress(settings->sta_fixedip), IPAddress(settings->sta_fixedgateway), IPAddress(settings->sta_fixednetmask));
+    }
+
+    // Set up the STA connection
+    WiFi.begin(settings->sta_ssid, settings->sta_pass);
+  }
 }
 
 void MirobotWifi::setupDNS(){
