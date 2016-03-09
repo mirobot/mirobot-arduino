@@ -220,6 +220,7 @@ void Mirobot::_calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::Json
 
 void Mirobot::_getConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   JsonObject& msg = outJson.createNestedObject("msg");
+  const char *modes[] = {"OFF","STA","AP","APSTA"};
   msg["sta_ssid"] = settings.sta_ssid;
   msg["sta_dhcp"] = settings.sta_dhcp;
   msg["sta_rssi"] = MirobotWifi::getStaRSSI();
@@ -234,6 +235,7 @@ void Mirobot::_getConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObjec
   msg["ap_auth_mode"] = settings.ap_auth_mode;
   msg["ap_channel"] = settings.ap_channel;
   msg["discovery"] = settings.discovery;
+  msg["wifi_mode"] = modes[MirobotWifi::getWifiMode()];
 }
 
 void Mirobot::_setConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){

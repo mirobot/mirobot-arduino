@@ -3,6 +3,8 @@
 #include "Arduino.h"
 #include "MirobotWifi.h"
 
+Ticker tick;
+
 bool MirobotWifi::networkChanged = false;
 
 void WiFiEvent(WiFiEvent_t event) {
@@ -48,6 +50,10 @@ int32_t MirobotWifi::getStaRSSI(){
   return WiFi.RSSI();
 }
 
+WiFiMode MirobotWifi::getWifiMode(){
+  return WiFi.getMode();
+}
+
 void MirobotWifi::setupWifi(){
   // Put the WiFi into AP_STA mode
   WiFi.mode(WIFI_AP_STA);
@@ -73,6 +79,10 @@ void MirobotWifi::setupWifi(){
 
     // Set up the STA connection
     WiFi.begin(settings->sta_ssid, settings->sta_pass);
+    // Check if it's connected after 10 seconds
+    tick.attach(10, MirobotWifi::staCheck);
+  }else{
+    WiFi.mode(WIFI_AP);
   }
 }
 
@@ -84,6 +94,13 @@ void MirobotWifi::run(){
   if(!enabled) return;
   webServer.run();
   dnsServer.processNextRequest();
+}
+
+void MirobotWifi::staCheck(){
+  tick.detach();
+  if(!(uint32_t)WiFi.localIP()){
+    WiFi.mode(WIFI_AP);
+  }
 }
 
 #endif

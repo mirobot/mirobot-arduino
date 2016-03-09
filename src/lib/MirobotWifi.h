@@ -7,6 +7,7 @@
 #include "lib/MirobotWeb.h"
 #include "MirobotESP8266.h"
 #include <DNSServer.h>
+#include <Ticker.h>
 
 struct MirobotSettings;
 
@@ -18,6 +19,7 @@ class MirobotWifi {
     static void defautAPName(char*);
     static IPAddress getStaIp();
     static int32_t getStaRSSI();
+    static WiFiMode getWifiMode();
     void setupWifi();
     static bool networkChanged;
   private:
@@ -26,6 +28,7 @@ class MirobotWifi {
     DNSServer dnsServer;
     MirobotSettings * settings;
     void setupDNS();
+    static void staCheck();
 };
 
 #endif
