@@ -6,10 +6,12 @@
 Ticker tick;
 
 bool MirobotWifi::networkChanged = false;
+MirobotSettings *MirobotWifi::settings;
 
 void WiFiEvent(WiFiEvent_t event) {
   switch(event) {
     case WIFI_EVENT_STAMODE_GOT_IP:
+      send_discovery_request(WiFi.localIP(), MirobotWifi::settings->ap_ssid);
       MirobotWifi::networkChanged = true;
       break;
     case WIFI_EVENT_STAMODE_DISCONNECTED:
