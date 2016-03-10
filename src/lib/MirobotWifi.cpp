@@ -75,9 +75,9 @@ void MirobotWifi::setupWifi(){
 
   // Set up the access point
   if(strlen(settings->ap_pass)){
-    WiFi.softAP(settings->ap_ssid, settings->ap_pass, settings->ap_channel);
+    WiFi.softAP(settings->ap_ssid, settings->ap_pass);
   }else{
-    WiFi.softAP(settings->ap_ssid, NULL, settings->ap_channel);
+    WiFi.softAP(settings->ap_ssid);
   }
 
   if(strlen(settings->sta_ssid)){
