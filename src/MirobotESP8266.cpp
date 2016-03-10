@@ -86,6 +86,7 @@ void Mirobot::initCmds(){
   manager.addCmd("setConfig",        &Mirobot::_setConfig,        true);
   manager.addCmd("resetConfig",      &Mirobot::_resetConfig,      true);
   manager.addCmd("freeHeap",         &Mirobot::_freeHeap,         true);
+  manager.addCmd("startWifiScan",    &Mirobot::_startWifiScan,    true);
 }
 
 void Mirobot::initSettings(){
@@ -305,6 +306,9 @@ void Mirobot::_resetConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObj
 }
 void Mirobot::_freeHeap(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   outJson["msg"] = ESP.getFreeHeap();
+}
+void Mirobot::_startWifiScan(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  MirobotWifi::startWifiScan();
 }
 
 void Mirobot::saveSettings(){
@@ -592,6 +596,16 @@ void Mirobot::networkNotifier(){
   manager.notify("network", outMsg);
 }
 
+void Mirobot::wifiScanNotifier(){
+  if(!MirobotWifi::wifiScanReady) return;
+  StaticJsonBuffer<1000> outBuffer;
+  JsonObject& outMsg = outBuffer.createObject();
+  JsonArray& msg = outMsg.createNestedArray("msg");
+  MirobotWifi::wifiScanReady = false;
+  wifi.getWifiScanData(msg);
+  manager.notify("wifiScan", outMsg);
+}
+
 // This allows for runtime configuration of which hardware is used
 void Mirobot::version(char v){
   versionNum = v;
@@ -640,6 +654,7 @@ void Mirobot::process(){
   calibrateHandler();
   sensorNotifier();
   networkNotifier();
+  wifiScanNotifier();
   checkReady();
   manager.process();
   wifi.run();

@@ -9,7 +9,7 @@
 #include "lib/WS2812B.h"
 #include "Wire.h"
 #include <EEPROM.h>
-#include "./lib/ArduinoJson/ArduinoJson.h"
+#include "lib/ArduinoJson/ArduinoJson.h"
 
 class CmdManager;
 struct CmdResult;
@@ -127,6 +127,7 @@ class Mirobot {
     void autoHandler();
     void sensorNotifier();
     void networkNotifier();
+    void wifiScanNotifier();
     void checkState();
     void initCmds();
     void initSettings();
@@ -181,6 +182,7 @@ class Mirobot {
     void _setConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _resetConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _freeHeap(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _startWifiScan(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void readADC();
     boolean leftCollide;
     boolean rightCollide;

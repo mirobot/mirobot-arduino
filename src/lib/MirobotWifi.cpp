@@ -7,6 +7,8 @@ Ticker sta_tick;
 Ticker discovery_tick;
 
 bool MirobotWifi::networkChanged = false;
+bool MirobotWifi::wifiScanRequested = false;
+bool MirobotWifi::wifiScanReady = false;
 MirobotSettings *MirobotWifi::settings;
 
 void send_discovery(){
@@ -29,6 +31,7 @@ void WiFiEvent(WiFiEvent_t event) {
 
 MirobotWifi::MirobotWifi() {
   enabled = false;
+  wifiScanRequested = false;
 }
 
 void MirobotWifi::begin(MirobotSettings * _settings){
@@ -95,6 +98,22 @@ void MirobotWifi::setupWifi(){
   }
 }
 
+void MirobotWifi::startWifiScan(){
+  wifiScanRequested = true;
+  WiFi.scanNetworks(true, true);
+}
+
+void MirobotWifi::getWifiScanData(ArduinoJson::JsonArray &msg){
+  int count = WiFi.scanComplete();
+  if(count < 0) return;
+  for (int i = 0; i < count; ++i){
+    JsonArray& net = msg.createNestedArray();
+    net.add(WiFi.SSID(i));
+    net.add(WiFi.encryptionType(i) != ENC_TYPE_NONE);
+    net.add(WiFi.RSSI(i));
+  }
+}
+
 void MirobotWifi::setupDNS(){
   dnsServer.start(53, "local.mirobot.io", IPAddress(192, 168, 4, 1));
 }
@@ -103,6 +122,10 @@ void MirobotWifi::run(){
   if(!enabled) return;
   webServer.run();
   dnsServer.processNextRequest();
+  if(wifiScanRequested && WiFi.scanComplete() >= 0){
+    wifiScanRequested = false;
+    wifiScanReady = true;
+  }
 }
 
 void MirobotWifi::staCheck(){

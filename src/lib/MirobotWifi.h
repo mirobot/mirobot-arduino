@@ -9,6 +9,7 @@
 #include <DNSServer.h>
 #include <Ticker.h>
 #include "lib/Discovery.h"
+#include "lib/ArduinoJson/ArduinoJson.h"
 
 struct MirobotSettings;
 
@@ -21,11 +22,15 @@ class MirobotWifi {
     static IPAddress getStaIp();
     static int32_t getStaRSSI();
     static WiFiMode getWifiMode();
+    static void startWifiScan();
     void setupWifi();
     static bool networkChanged;
+    static bool wifiScanReady;
     static MirobotSettings * settings;
+    void getWifiScanData(ArduinoJson::JsonArray &);
   private:
     bool enabled;
+    static bool wifiScanRequested;
     MirobotWeb webServer;
     DNSServer dnsServer;
     void setupDNS();
