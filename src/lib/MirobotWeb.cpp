@@ -1,7 +1,7 @@
 #ifdef ESP8266
 #include "Arduino.h"
 #include "MirobotWeb.h"
-#include "web_pages.h"
+#include "web.h"
 
 ESP8266WebServer server(80);
 

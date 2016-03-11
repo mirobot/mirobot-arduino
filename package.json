@@ -1,0 +1,9 @@
+{
+  "name": "CompressUI",
+  "description": "Compress the Mirobot UI",
+  "version": "1.0.0",
+  "dependencies": {
+    "html-minifier": "1.2.0",
+    "web-resource-inliner": "1.2.1"
+  }
+}
