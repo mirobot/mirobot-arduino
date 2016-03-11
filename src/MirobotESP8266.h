@@ -80,8 +80,6 @@ struct MirobotSettings {
   uint32_t     sta_fixeddns2;
   char         ap_ssid[32];
   char         ap_pass[64];
-  char         ap_auth_mode;
-  char         ap_channel;
   bool         discovery;
 };
 

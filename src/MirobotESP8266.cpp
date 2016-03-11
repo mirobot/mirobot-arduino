@@ -111,8 +111,6 @@ void Mirobot::initSettings(){
     settings.sta_fixeddns2 = 0;
     MirobotWifi::defautAPName(settings.ap_ssid);
     settings.ap_pass[0] = 0;
-    settings.ap_auth_mode = 0;
-    settings.ap_channel = 6;
     settings.discovery = true;
     saveSettings();
   }
@@ -233,7 +231,6 @@ void Mirobot::_getConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObjec
   msg["sta_ip"] = MirobotWifi::getStaIp().toString();
   msg["ap_ssid"] = settings.ap_ssid;
   msg["ap_encrypted"] = !!strlen(settings.ap_pass);
-  msg["ap_auth_mode"] = settings.ap_auth_mode;
   msg["discovery"] = settings.discovery;
   msg["wifi_mode"] = modes[MirobotWifi::getWifiMode()];
 }
@@ -257,10 +254,6 @@ void Mirobot::_setConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObjec
   // Set the password for the access point
   if(inJson["arg"].asObject().containsKey("ap_pass")){
     strcpy(settings.ap_pass, inJson["arg"]["ap_pass"]);
-  }
-  // Change the name of the built in access point
-  if(inJson["arg"].asObject().containsKey("ap_auth_mode")){
-    settings.ap_auth_mode = atoi(inJson["arg"]["ap_auth_mode"].asString());
   }
   // Set whether to use DHCP
   if(inJson["arg"].asObject().containsKey("sta_dhcp")){
