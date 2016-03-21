@@ -5,6 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <WiFiClient.h>
 #include "lib/MirobotWeb.h"
+#include "lib/MirobotWebSocket.h"
 #include "MirobotESP8266.h"
 #include <DNSServer.h>
 #include <Ticker.h>
@@ -28,6 +29,8 @@ class MirobotWifi {
     static bool wifiScanReady;
     static MirobotSettings * settings;
     void getWifiScanData(ArduinoJson::JsonArray &);
+    void onMsg(msgHandler h);
+    static void sendWebSocketMsg(char *);
   private:
     bool enabled;
     static bool wifiScanRequested;

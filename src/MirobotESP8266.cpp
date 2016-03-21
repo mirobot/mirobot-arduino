@@ -14,6 +14,14 @@ WS2812B led(LED_PIN);
 
 static char tmpBuff[10];
 
+void handleMsg(char * msg){
+  manager.processMsg(msg);
+}
+
+void sendSerialMsg(char * msg){
+  Serial.println(msg);
+}
+
 Mirobot::Mirobot(){
   blocking = true;
   lastLedChange = millis();
@@ -47,11 +55,14 @@ void Mirobot::enableSerial(){
   // Set up Serial and add it to be processed
   Serial.begin(230400);
   Serial.setTimeout(1); 
-  manager.addStream(Serial);
+  manager.addOutputHandler(sendSerialMsg);
+  serialEnabled = true;
 }
 
 void Mirobot::enableWifi(){
   wifi.begin(&settings);
+  wifi.onMsg(handleMsg);
+  manager.addOutputHandler(wifi.sendWebSocketMsg);
 }
 
 void Mirobot::initCmds(){
@@ -641,6 +652,28 @@ void Mirobot::checkReady(){
   }
 }
 
+void Mirobot::serialHandler(){
+  if(!serialEnabled) return;
+  // process incoming data
+  if (Serial.available() > 0){
+    last_char = millis();
+    char incomingByte = Serial.read();
+    if((incomingByte == '\r' || incomingByte == '\n') && serial_buffer_pos && manager.processMsg(serial_buffer)){
+      // It's been successfully processed as a line
+      serial_buffer_pos = 0;
+    }else{
+      // Not a line to process so store for processing
+      serial_buffer[serial_buffer_pos++] = incomingByte;
+      serial_buffer[serial_buffer_pos] = 0;
+    }
+  }else{
+    //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
+    if(millis() - last_char >= 500){
+      serial_buffer_pos = 0;
+    }
+  }
+}
+
 void Mirobot::process(){
   ledHandler();
   servoHandler();
@@ -649,8 +682,8 @@ void Mirobot::process(){
   sensorNotifier();
   networkNotifier();
   wifiScanNotifier();
+  serialHandler();
   checkReady();
-  manager.process();
   wifi.run();
 }
 

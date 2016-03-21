@@ -10,6 +10,7 @@
 #include "Wire.h"
 #include <EEPROM.h>
 #include "lib/ArduinoJson/ArduinoJson.h"
+#include "lib/MirobotWebSocket.h"
 
 class CmdManager;
 struct CmdResult;
@@ -60,6 +61,7 @@ struct CmdResult;
 #define I2C_DATA  0
 #define I2C_CLOCK 2
 
+#define SERIAL_BUFFER_LENGTH 500
 
 typedef enum {UP, DOWN} penState_t;
 
@@ -187,6 +189,11 @@ class Mirobot {
     uint8_t leftLineSensor;
     uint8_t rightLineSensor;
     long nextADCRead;
+    bool serialEnabled;
+    unsigned long last_char;
+    char serial_buffer[SERIAL_BUFFER_LENGTH];
+    int serial_buffer_pos;
+    void serialHandler();
 };
 
 #endif

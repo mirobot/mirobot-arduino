@@ -43,9 +43,17 @@ void MirobotWifi::begin(MirobotSettings * _settings){
   setupWifi();
   setupDNS();
 
+  // Start the web server
   webServer = MirobotWeb();
 
-	enabled = true;
+  // Start the WebSocket server
+  beginWebSocket();
+
+  enabled = true;
+}
+
+void MirobotWifi::onMsg(msgHandler h){
+  setMsgHandler(h);
 }
 
 void MirobotWifi::defautAPName(char *name){
@@ -121,6 +129,7 @@ void MirobotWifi::setupDNS(){
 void MirobotWifi::run(){
   if(!enabled) return;
   webServer.run();
+  handleWebSocket();
   dnsServer.processNextRequest();
   if(wifiScanRequested && WiFi.scanComplete() >= 0){
     wifiScanRequested = false;
@@ -133,6 +142,10 @@ void MirobotWifi::staCheck(){
   if(!(uint32_t)WiFi.localIP()){
     WiFi.mode(WIFI_AP);
   }
+}
+
+void MirobotWifi::sendWebSocketMsg(char * msg){
+  broadcastMsg(msg);
 }
 
 #endif

@@ -9,7 +9,6 @@
 class MirobotWeb {
   public:
     MirobotWeb();
-    void begin();
     void run();
 };
 

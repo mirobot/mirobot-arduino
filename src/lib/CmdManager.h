@@ -8,11 +8,11 @@ class CmdManager;
 
 #include "Mirobot.h"
 #include "./lib/ArduinoJson/ArduinoJson.h"
+#include "./lib/MirobotWebSocket.h"
 
-#define INPUT_BUFFER_LENGTH 500
 #define CMD_COUNT 31
-
-typedef enum {JSON_EXPECT_JSON_ATTR, JSON_ATTR, JSON_JSON_DELIM, JSON_VAL} jsonParseState_t;
+#define JSON_BUFFER_LENGTH 500
+#define OUTPUT_HANDLER_COUNT 2
 
 typedef void (Mirobot::*MirobotMemFn)(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
 typedef void (* fp) (void *, char *);
@@ -28,27 +28,25 @@ class CmdManager {
   public:
     CmdManager();
     void addCmd(const char cmd[], MirobotMemFn func, bool immediate);
-    void addStream(Stream &s);
+    bool addOutputHandler(msgHandler);
     void process();
     void notify(const char[], ArduinoJson::JsonObject &);
     void setMirobot(Mirobot &);
     void sendComplete();
+    boolean processMsg(char * msg);
     boolean in_process;
   private:
     boolean processLine();
     void processCmd(const char &cmd, const char &arg, const char &id);
     void runCmd(char &cmd, char &arg, char &id);
     void sendResponse(const char state[], ArduinoJson::JsonObject &, const char &id);
-    Stream* _s;
     char webSocketKey[61];
-    char input_buffer[INPUT_BUFFER_LENGTH];
-    byte input_buffer_pos;
     char current_id[11];
-    unsigned long last_char;
     boolean processJSON();
     Mirobot* _m;
     Cmd _cmds[CMD_COUNT];
     int cmd_counter;
+    msgHandler outputHandlers[OUTPUT_HANDLER_COUNT];
 };
 
 
