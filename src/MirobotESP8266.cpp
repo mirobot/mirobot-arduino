@@ -33,6 +33,7 @@ void Mirobot::begin(){
   setPenState(UP);
   // Set up the line follower LED enable pin
   pinMode(LINE_LED_ENABLE, OUTPUT);
+  digitalWrite(LINE_LED_ENABLE, HIGH);
   // Initialise the settings
   initSettings();
   // Set up the commands for the command manager
@@ -154,7 +155,7 @@ void Mirobot::_followState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObj
 void Mirobot::_followNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   followNotify = !!strcmp(inJson["arg"].asString(), "false");
   // Turn the LEDs on or off
-  digitalWrite(LINE_LED_ENABLE, followNotify);
+  digitalWrite(LINE_LED_ENABLE, !followNotify);
 }
 
 void Mirobot::_slackCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
