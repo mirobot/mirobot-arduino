@@ -4,298 +4,23 @@
   <meta charset="utf-8">
   <title>Mirobot Control</title>
   <meta name="viewport" content="width=900, user-scalable=no">
-  <style>
-    body {
-      background-color: #fff;
-      font-family: sans-serif;
-    }
-    a{
-      color:#333;
-    }
-    #configure{ display:none}
-    #menu li{
-      display:inline-block;
-      list-style-type:none;
-      border:1px solid #888;
-      padding:10px;
-      background-color: #EEE;
-    }
-    #menu li a{
-      text-decoration:none;
-      color:#333;
-    }
-    #menu li.selected{
-      background-color:#FFF;
-    }
-    .editor{
-      display:block;
-      min-width:600px;
-    }
-    .editor ol{
-      list-style-type:none;
-      padding:0;
-      margin:0;
-    }
-    .editor .left{
-      width:300px;
-      float: left;
-    }
-    .editor .functionList{
-      vertical-align:top;
-      background:#EEE;
-      border:1px solid #888;
-      padding:10px;
-    }
-    .editor input[type='number']{
-      width:50px;
-    }
-    .editor .container h2{
-      background:#888;
-      padding:5px;
-      margin:0;
-      color:#FFF;
-    }
-    .editor .right{
-      border:1px solid #888;
-      margin-left:310px;
-      max-width:600px;
-      position:relative;
-    }
-    .editor .buttons{
-      position:absolute;
-      padding:0;
-      bottom:0;
-      width:100%;
-    }
-    .editor .programWrapper{
-      overflow:auto;
-    }
-    .editor .buttons button{
-      color:#FFF;
-      font-size:1.5em;
-      padding:5px;
-      height:40px;
-      vertical-align:top;
-      border:none;
-      width:33.33%;
-      font-weight:bold;
-      margin:0;
-      background:#BBB;
-    }
-    .editor .buttons button:focus{
-      outline-width: 0;
-    }
-    .editor .buttons .run{
-      background-color:#33D121;
-    }
-    .editor .buttons .run:hover{
-      background-color:#2CAD1D;
-    }
-    .editor .buttons .run:active{
-      background-color:#218216;
-    }
-    .editor .buttons .stop{
-      background-color:#888;
-    }
-    .editor .buttons .stop:hover{
-      background-color:#444;
-    }
-    .editor .buttons .stop:active{
-      background-color:#000;
-    }
-    .editor .buttons .clear{
-      background-color:#AAA;
-    }
-    .editor .buttons .clear:hover{
-      background-color:#777;
-    }
-    .editor .buttons .clear:active{
-      background-color:#444;
-    }
-    .editor .buttons .disabled{
-      background-color:#BBB;
-    }
-    .editor .buttons .disabled:hover{
-      background-color:#BBB;
-    }
-    .editor .program{
-      overflow:hidden;
-      min-width:300px;
-      min-height:100%;
-      vertical-align:top;
-      padding:10px;
-    }
-    .editor .program .hint{
-      text-align:center;
-      border:1px dashed #888;
-      display:block;
-      padding:10px;
-      min-height:1.5em;
-      color:#CCC;
-    }
-    .editor .functionList .hint{
-      display:none;
-    }
-    .editor .programWrapper{
-      overflow:auto;
-    }
-    .editor .function{
-      background:#FFF;
-      border:1px solid #888;
-      padding:10px;
-      min-height:1.5em;
-    }
-    .editor .program .function.running{
-      background:#F00;
-    }
-    .editor .functionList .function{
-      -webkit-box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
-      -moz-box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
-      box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
-      margin:0 0 10px;
-    }
-    .editor .fn-repeat ol{
-      min-height:1.5em;
-      border:1px solid #888;
-    }
-    .editor .dragged {
-      position: absolute;
-      opacity: 0.5;
-      z-index: 2000;
-    }
-    .editor .placeholder {
-      position: relative;
-      border:1px dashed #888;
-      display:block;
-      padding:10px;
-      min-height:1.5em;
-    }
-    .editor ol.program li.function.active{
-      background-color:#0F0;
-    }
-    body.dragging, body.dragging * {
-      cursor: move !important;
-    }
-    .connState{
-      position:absolute;
-      right:10px;
-      color:#D12121;
-    }
-    .connState.connected{
-      color:#33D121;
-    }
-    .connState.initial{
-      color:#666;
-    }
-    #miroConnState{
-      top:50px;
-    }
-    #wifiConnState{
-      top:25px;
-    }
-    #wifiConnState.connected{
-      text-decoration:none;
-    }
-    #wifiConnState.connected:hover{
-      text-decoration:underline;
-    }
-    #header{
-      padding:10px 0;
-      margin:0 0 10px;
-      border-bottom: 1px solid #BBB;
-    }
-    
-    .modal{
-      position:absolute;
-      top:0;
-      left:0;
-    }
-    .modal{
-      background-color:rgba(0,0,0,0.5);
-      width:100%;
-      height:100%;
-      text-align:center;
-      z-index:100000;
-    }
-    .modal .content{
-      background-color:#FFF;
-      width:400px;
-      margin:30px auto;
-      padding:10px;
-      border:5px solid #999;
-      text-align:center;
-    }
-    #configFrame .content input[type=text],#configFrame .content input[type=password]{
-      width:200px;
-    }
-    #configFrame .content td{
-      text-align:right;
-      padding:4px;
-    }
-    #configFrame .content td.left{
-      text-align:left;
-    }
-    #configFrame iframe{
-      width:400px;
-      height:500px;
-      border:none;
-    }
-    #version{
-      font-size:75%;
-      color:#CCC;
-      position:absolute;
-      bottom:5px;
-      right:10px;
-    }
-    #version a{
-      color:#888;
-      text-decoration:none;
-    }
-    .editor .extra{
-      padding:10px;
-    }
-    .editor .extra button{
-      display:block;
-      margin:0 0 10px 0;
-      background: #FFF;
-      border: 1px #888 solid;
-      padding:5px;
-      min-width:160px;
-      text-align:center;
-      min-height:3em;
-    }
-    .editor .extra button:active{
-      background: #DDD;
-    }
-    .editor .extra button:hover{
-      background: #EEE;
-    }
-    .editor .extra button:focus{
-      outline: 0;
-    }
-    #configIframe{
-      border:none;
-      display:hidden;
-      position:absolute;
-      top:0;
-      left:0;
-      width:1px;
-      height:1px;
-    }
-  </style>
+  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="ui.css">
+  <link rel="stylesheet" href="flag-icon.css">
+  <link rel="stylesheet" href="font-awesome.css">
 </head>
 <body>
-  <div id="header">
-    <img src="logo.png">
-    <a href="#" id="wifiConnState" class="connState"></a>
-    <span id="miroConnState" class="connState initial">Connecting to Mirobot</span>
-    <span id="version"></span>
+  
+<div id="header">
+  <div id="menu">
+    <div id="sim" class="menuItem hidden"></div>
+    <div id="fullscreen" class="menuItem"><i class="icon fa fa-expand fa-2x"></i></div>
+    <div id="conn" class="menuItem"><i class="icon fa fa-wifi fa-2x"></i></div>
+    <div id="l10n" class="menuItem hidden"><i class="icon fa fa-globe fa-2x"></i></div>
+    <div id="save" class="menuItem hidden"><i class="icon fa fa-save fa-2x"></i></div>
   </div>
-  <div id="configFrame" class="modal" style="display:none">
-    <div class="content" id="configContent">
-      <iframe src=""></iframe>
-    </div>
-  </div>
+  <h1 class="title"><img src="logo.png" alt="Mirobot Apps" /></h1>
+</div>
   <div id="wsMsg" class="modal" style="display:none">
     <div class="content">
       <h3>Your browser does not support Mirobot</h3>
@@ -304,12 +29,25 @@
       <p>Any recent version of the major browsers should work without problems. If you're not sure what to use, <a href="https://www.google.com/chrome/browser/">Google Chrome</a> is a good start.</p>
     </div>
   </div>
-  <div id="code"></div>
+  <div id="app">
+    <div id="code"></div>
+  </div>
+  <script type="text/javascript" src="l10n.min.js"></script>
+  <script type="text/javascript" src="localisations.js"></script>
+  <script type="text/javascript" src="FileSaver.min.js"></script>
   <script type="text/javascript" src="snack.js"></script>
   <script type="text/javascript" src="mirobot.js"></script>
+  <script type="text/javascript" src="mirobot-save.js"></script>
+  <script type="text/javascript" src="mirobot-config.js"></script>
+  <script type="text/javascript" src="mirobot-localapp.js"></script>
+  <script type="text/javascript" src="mirobot-sim.js"></script>
+  <script type="text/javascript" src="polyfills.min.js"></script>
+  <script type="text/javascript" src="main.js"></script>
+  <script type="text/javascript" src="persist.js"></script>
   <script type="text/javascript" src="builder.js"></script>
   <script type="text/javascript" src="snack.sortableList.js"></script>
   <script type="text/javascript">
+  /*
     var wirelessConfig = {"clientSSID":"`clientSSID`","wifiMode":"`wifiMode`","clientIp":"`clientIp`","clientGateway":"`clientGateway`","clientNetmask":"`clientNetmask`","clientDhcp":"`clientDhcp`","clientMac":"`clientMac`","clientConnected":"`clientConnected`","APAuth":"`APAuth`","APChannel":"`APChannel`","APSSID":"`APSSID`"};
     var versions = {wifi:"`version`",arduino:undefined,ui:'{{version}}'};
     if(wirelessConfig.clientSSID.indexOf('clientSSID') > -1){
@@ -510,6 +248,22 @@
     }else{
       document.getElementById('wsMsg').style.display = 'block';
     }
+    */
+
+var $ = snack.wrap;
+var builder = new Builder($('#code'), undefined, true);
+var app  = new MirobotApp({
+  l10n: true,
+  languages: baseLanguages,
+  simulation: true
+});
+builder.setMirobot(app.mirobot);
+
+app.initPersistence({
+  saveHandler: function(){ return builder.saveProgram(); },
+  loadHandler: function(prog){ return builder.loadProgram(prog); },
+  clearHandler: function(){ return builder.clearProgram(); }
+});
 
   </script>
 </body>

@@ -1,6 +1,6 @@
 var Mirobot = function(url){
   this.url = url;
-  this.connect();
+  if(url) this.connect();
   this.cbs = {};
   this.listeners = [];
   this.sensorState = {follow: null, collide: null};
@@ -13,14 +13,18 @@ Mirobot.prototype = {
   connected: false,
   error: false,
   timeoutTimer: undefined,
+  simulating: false,
+  sim: undefined,
 
-  connect: function(){
-    if(!this.connected && !this.error){
+  connect: function(url){
+    if(url) this.url = url;
+    if(!this.connected && !this.error && this.url){
       var self = this;
       this.has_connected = false;
       this.ws = new WebSocket(this.url);
-      this.ws.onmessage = function(ws_msg){self.handle_ws(ws_msg)};
+      this.ws.onmessage = function(ws_msg){self.handle_msg(ws_msg)};
       this.ws.onopen = function(){
+        self.connected = true;
         self.version(function(){
           self.setConnectedState(true);
         });
@@ -35,16 +39,23 @@ Mirobot.prototype = {
     }
   },
 
+  disconnect: function(){
+    this.connected = false;
+    this.error = false
+    this.ws.onerror = function(){};
+    this.ws.onclose = function(){};
+    this.ws.close();
+  },
+
   setConnectedState: function(state){
     var self = this;
     clearTimeout(self.connTimeout);
     self.connected = state;
     if(state){ self.has_connected = true; }
-    if(self.has_connected){
-      setTimeout(function(){
-        self.broadcast(self.connected ? 'connected' : 'disconnected');
-      }, 500);
-    }
+    setTimeout(function(){
+      self.emitEvent('readyStateChange', {state: (self.ready() ? 'ready' : 'notReady')});
+      self.emitEvent('connectedStateChange', {state: (self.connected ? 'connected' : 'disconnected')});
+    }, 500);
     // Try to auto reconnect if disconnected
     if(state){
       if(self.reconnectTimer){
@@ -60,17 +71,31 @@ Mirobot.prototype = {
       }
     }
   },
+
+  ready: function(){
+    return this.connected || this.simulating;
+  },
+
+  setSimulator: function(sim){
+    this.sim = sim;
+  },
+
+  setSimulating: function(s){
+    this.simulating = s;
+    this.emitEvent('readyStateChange', {state: (this.ready() ? 'ready' : 'notReady')});
+  },
   
-  broadcast: function(msg){
-    for(i in this.listeners){
-      if(this.listeners.hasOwnProperty(i)){
-        this.listeners[i](msg);
+  emitEvent: function(event, msg){
+    if(typeof this.listeners[event] !== 'undefined'){
+      for(var i = 0; i< this.listeners[event].length; i++){
+        this.listeners[event][i](msg);
       }
     }
   },
 
-  addListener: function(listener){
-    this.listeners.push(listener);
+  addEventListener: function(event, listener){
+    this.listeners[event] =  this.listeners[event] || [];
+    this.listeners[event].push(listener);
   },
 
   handleError: function(err){
@@ -78,11 +103,11 @@ Mirobot.prototype = {
       if(this.ws.readyState === WebSocket.OPEN){
         this.ws.close();
       }
-      this.setConnectedState(false);
       this.msg_stack = [];
     }else{
       console.log(err);
     }
+    this.setConnectedState(false);
   },
 
   move: function(direction, distance, cb){
@@ -157,7 +182,7 @@ Mirobot.prototype = {
     this.send({cmd: 'calibrateTurn', arg: "" + factor}, cb);
   },
 
-  collisionSensorState: function(cb){
+  collideState: function(cb){
     if(this.sensorState.collide === null || !this.collideListening){
       var self = this;
       this.send({cmd: 'collideState'}, function(state, msg){
@@ -171,7 +196,7 @@ Mirobot.prototype = {
     }
   },
 
-  followSensorState: function(cb){
+  followState: function(cb){
     if(this.sensorState.follow === null || !this.followListening){
       var self = this;
       this.send({cmd: 'followState'}, function(state, msg){
@@ -208,6 +233,7 @@ Mirobot.prototype = {
         for(var i in self.cbs){
           self.cbs[i]('complete', undefined, true);
         }
+        self.emitEvent('programComplete');
         self.robot_state = 'idle';
         self.msg_stack = [];
         self.cbs = {};
@@ -241,6 +267,9 @@ Mirobot.prototype = {
     if(['stop', 'pause', 'resume', 'ping', 'version'].indexOf(msg.cmd) >= 0){
       this.send_msg(msg);
     }else{
+      if(this.msg_stack.length === 0){
+        this.emitEvent('programStart');
+      }
       this.msg_stack.push(msg);
       this.process_msg_queue();
     }
@@ -249,9 +278,13 @@ Mirobot.prototype = {
   send_msg: function(msg){
     var self = this;
     console.log(msg);
-    this.ws.send(JSON.stringify(msg));
-    if(this.timeoutTimer) clearTimeout(this.timeoutTimer);
-    this.timeoutTimer = window.setTimeout(function(){ self.handleError("Timeout") }, 3000);
+    if(this.simulating && this.sim){
+      this.sim.send(msg, function(msg){ self.handle_msg(msg) });
+    }else if(this.connected){
+      this.ws.send(JSON.stringify(msg));
+      if(this.timeoutTimer) clearTimeout(this.timeoutTimer);
+      this.timeoutTimer = window.setTimeout(function(){ self.handleError("Timeout") }, 3000);
+    }
   },
   
   process_msg_queue: function(){
@@ -261,12 +294,12 @@ Mirobot.prototype = {
     }
   },
   
-  handle_ws: function(ws_msg){
-    msg = JSON.parse(ws_msg.data);
+  handle_msg: function(msg){
+    if(typeof msg === 'object' && typeof msg.data === 'string') msg = JSON.parse(msg.data);
     console.log(msg);
     clearTimeout(this.timeoutTimer);
     if(msg.status === 'notify'){
-      this.broadcast(msg.id);
+      this.emitEvent(msg.id, msg.msg);
       this.sensorState[msg.id] = msg.msg;
       return;
     }
@@ -283,7 +316,7 @@ Mirobot.prototype = {
         }
         this.msg_stack.shift();
         if(this.msg_stack.length === 0){
-          this.broadcast('program_complete');
+          this.emitEvent('programComplete');
         }
         this.robot_state = 'idle';
         this.process_msg_queue();
@@ -296,7 +329,7 @@ Mirobot.prototype = {
     }
     if(msg.status && msg.status === 'error' && msg.msg === 'Too many connections'){
       this.error = true;
-      this.broadcast('error');
+      this.emitEvent('error');
     }
   },
   

@@ -2,7 +2,7 @@
 #define __MirobotWebSocket_h__
 
 #include "Arduino.h"
-#include <WebSocketsServer.h>
+#include "./lib/ArduinoWebSockets/WebSocketsServer.h"
 
 typedef void (* msgHandler) (char *);
 

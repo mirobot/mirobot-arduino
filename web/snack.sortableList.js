@@ -1,4 +1,6 @@
-snack.wrap.define('draggableList', function(config){
+//snack.wrap.define('draggableList', function(config){
+
+var draggableList = function(selector, config){
   var clickTimeout;
   var dragging = false;
   var dragEl;
