@@ -18,12 +18,14 @@ void send_discovery(){
 void WiFiEvent(WiFiEvent_t event) {
   switch(event) {
     case WIFI_EVENT_STAMODE_GOT_IP:
-      send_discovery();
-      discovery_tick.attach(300, send_discovery);
+      if(MirobotWifi::settings->discovery){
+        send_discovery();
+        discovery_tick.attach(300, send_discovery);
+      }
       MirobotWifi::networkChanged = true;
       break;
     case WIFI_EVENT_STAMODE_DISCONNECTED:
-      discovery_tick.detach();
+      if(MirobotWifi::settings->discovery) discovery_tick.detach();
       MirobotWifi::networkChanged = true;
       break;
   }
