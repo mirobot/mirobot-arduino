@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Mirobot Control</title>
   <meta name="viewport" content="width=900, user-scalable=no">
-  <link rel="stylesheet" href="main.css">
+  <link rel="stylesheet" href="base.css">
   <link rel="stylesheet" href="ui.css">
   <link rel="stylesheet" href="flag-icon.css">
   <link rel="stylesheet" href="font-awesome.css">
@@ -18,6 +18,7 @@
     <div id="conn" class="menuItem"><i class="icon fa fa-wifi fa-2x"></i></div>
     <div id="l10n" class="menuItem hidden"><i class="icon fa fa-globe fa-2x"></i></div>
     <div id="save" class="menuItem hidden"><i class="icon fa fa-save fa-2x"></i></div>
+    <div id="conf" class="menuItem"><i class="icon fa fa-cog fa-2x"></i></div>
   </div>
   <h1 class="title"><img src="logo.png" alt="Mirobot Apps" /></h1>
 </div>
@@ -38,7 +39,7 @@
   <script type="text/javascript" src="snack.js"></script>
   <script type="text/javascript" src="mirobot.js"></script>
   <script type="text/javascript" src="mirobot-save.js"></script>
-  <script type="text/javascript" src="mirobot-config.js"></script>
+  <script type="text/javascript" src="mirobot-menus.js"></script>
   <script type="text/javascript" src="mirobot-localapp.js"></script>
   <script type="text/javascript" src="mirobot-sim.js"></script>
   <script type="text/javascript" src="polyfills.min.js"></script>
@@ -48,26 +49,12 @@
   <script type="text/javascript" src="snack.sortableList.js"></script>
   <script type="text/javascript">
   /*
-    var wirelessConfig = {"clientSSID":"`clientSSID`","wifiMode":"`wifiMode`","clientIp":"`clientIp`","clientGateway":"`clientGateway`","clientNetmask":"`clientNetmask`","clientDhcp":"`clientDhcp`","clientMac":"`clientMac`","clientConnected":"`clientConnected`","APAuth":"`APAuth`","APChannel":"`APChannel`","APSSID":"`APSSID`"};
-    var versions = {wifi:"`version`",arduino:undefined,ui:'{{version}}'};
-    if(wirelessConfig.clientSSID.indexOf('clientSSID') > -1){
-      wirelessConfig = {"clientSSID":"foo","wifiMode":"3","clientIp":"192.168.1.100","clientGateway":"192.168.1.1","clientNetmask":"255.255.255.0","clientDhcp":"true","clientMac":"10:20:30:40:50:60","clientConnected":"0","APAuth":"0","APChannel":"6","APSSID":"Mirobot-abcd"};
-      versions.wifi = '2.0.0';
-    }
-    if(versions.ui.indexOf('version') >= 0) versions.ui = '2.0.0';
-    
+   
     var $;
     var has_remote_conn = true;
     var remote_base = 'http://mirobot.io/assets/mirobot_js/';
-    var hashConfig = {};
     var mirobot;
 
-    if(window.location.hash !== ''){
-      window.location.hash.replace('#', '').split('&').map(function(el){
-        var split = el.split('=');
-        hashConfig[split[0]] = split[1];
-      });
-    }
 
     // load script function with callback to handle synchronicity 
     var loadScript = function( src, script, base_url, callback, errback ){
@@ -249,22 +236,34 @@
       document.getElementById('wsMsg').style.display = 'block';
     }
     */
+    
+window.hashConfig = {};
+if(window.location.hash !== ''){
+  window.location.hash.replace('#', '').split('&').map(function(el){
+    var split = el.split('=');
+    hashConfig[split[0]] = split[1];
+  });
+}
 
 var $ = snack.wrap;
-var builder = new Builder($('#code'), undefined, true);
-var app  = new MirobotApp({
-  l10n: true,
-  languages: baseLanguages,
-  simulation: true
-});
-builder.setMirobot(app.mirobot);
+var builder, app;
 
-app.initPersistence({
-  saveHandler: function(){ return builder.saveProgram(); },
-  loadHandler: function(prog){ return builder.loadProgram(prog); },
-  clearHandler: function(){ return builder.clearProgram(); }
-});
+window.addEventListener('load', function(){
+  initL10n();
+  app  = new MirobotApp({
+    l10n: true,
+    languages: baseLanguages,
+    simulation: true
+  });
+  builder = new Builder($('#code'), undefined, true);
+  builder.setMirobot(app.mirobot);
 
+  app.initPersistence({
+    saveHandler: function(){ return builder.saveProgram(); },
+    loadHandler: function(prog){ return builder.loadProgram(prog); },
+    clearHandler: function(){ return builder.clearProgram(); }
+  });
+});
   </script>
 </body>
 </html>

@@ -258,12 +258,28 @@ Mirobot.prototype = {
     this.send({cmd:'version'}, cb);
   },
 
+  getConfig: function(cb){
+    this.send({cmd:'getConfig'}, cb);
+  },
+
+  setConfig: function(conf, cb){
+    this.send({cmd:'setConfig', arg: conf}, cb);
+  },
+
+  resetConfig: function(conf, cb){
+    this.send({cmd:'resetConfig'}, cb);
+  },
+
+  startWifiScan: function(cb){
+    this.send({cmd:'startWifiScan'}, cb);
+  },
+
   send: function(msg, cb){
     msg.id = Math.random().toString(36).substr(2, 10)
     if(cb){
       this.cbs[msg.id] = cb;
     }
-    if(msg.arg){ msg.arg = msg.arg.toString(); }
+    if(typeof msg.arg === 'number'){ msg.arg = msg.arg.toString(); }
     if(['stop', 'pause', 'resume', 'ping', 'version'].indexOf(msg.cmd) >= 0){
       this.send_msg(msg);
     }else{

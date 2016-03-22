@@ -1,0 +1,167 @@
+body {
+  background-color: #fff;
+  font-family: sans-serif;
+}
+a{
+  color:#333;
+}
+#configure{ display:none}
+.editor{
+  display:block;
+  min-width:600px;
+}
+.editor ol{
+  list-style-type:none;
+  padding:0;
+  margin:0;
+}
+.editor .left{
+  width:300px;
+  float: left;
+}
+.editor .functionList{
+  vertical-align:top;
+  background:#EEE;
+  border:1px solid #888;
+  padding:10px;
+}
+.editor input[type='number']{
+  width:50px;
+}
+.editor .container h2{
+  background:#888;
+  padding:5px;
+  margin:0;
+  color:#FFF;
+}
+.editor .right{
+  border:1px solid #888;
+  margin-left:310px;
+  max-width:600px;
+  position:relative;
+}
+.editor .buttons{
+  position:absolute;
+  padding:0;
+  bottom:0;
+  width:100%;
+}
+.editor .programWrapper{
+  overflow:auto;
+}
+.editor .buttons button{
+  color:#FFF;
+  font-size:1.5em;
+  padding:5px;
+  height:40px;
+  vertical-align:top;
+  border:none;
+  width:33.33%;
+  display:inline-block;
+  font-weight:bold;
+  margin:0;
+  background:#BBB;
+}
+.editor .buttons button:focus{
+  outline-width: 0;
+}
+
+.editor .buttons .run{ background-color:#33D121 }
+.editor .buttons .run:hover{ background-color:#2CAD1D }
+.editor .buttons .run:active{ background-color:#218216 }
+
+.editor .buttons .stop{ background-color:#888 }
+.editor .buttons .stop:hover{ background-color:#444 }
+.editor .buttons .stop:active{ background-color:#000 }
+
+.editor .buttons .clear{ background-color:#BBB }
+.editor .buttons .clear:hover{ background-color:#777 }
+.editor .buttons .clear:active{ background-color:#444 }
+
+.editor .buttons .disabled{ background-color:#BBB }
+.editor .buttons .disabled:hover{ background-color:#BBB }
+
+.editor.notReady .buttons .run{ background-color:#BBB }
+.editor.notReady .buttons .stop{ background-color:#AAA }
+
+.editor .program{
+  overflow:hidden;
+  min-width:300px;
+  min-height:100%;
+  vertical-align:top;
+  padding:10px;
+}
+.editor .program .hint{
+  text-align:center;
+  border:1px dashed #888;
+  display:block;
+  padding:10px;
+  min-height:1.5em;
+  color:#CCC;
+}
+.editor .functionList .hint{
+  display:none;
+}
+.editor .programWrapper{
+  overflow:auto;
+}
+.editor .function{
+  background:#FFF;
+  border:1px solid #888;
+  padding:10px;
+  min-height:1.5em;
+}
+.editor .program .function.running{
+  background:#F00;
+}
+.editor .functionList .function{
+  -webkit-box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
+  -moz-box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
+  box-shadow: 12px 12px 12px -5px rgba(0,0,0,0.5);
+  margin:0 0 10px;
+}
+.editor .fn-repeat ol{
+  min-height:1.5em;
+  border:1px solid #888;
+}
+.editor .dragged {
+  position: absolute;
+  opacity: 0.5;
+  z-index: 2000;
+}
+.editor .placeholder {
+  position: relative;
+  border:1px dashed #888;
+  display:block;
+  padding:10px;
+  min-height:1.5em;
+}
+.editor ol.program li.function.active{
+  background-color:#0F0;
+}
+body.dragging, body.dragging * {
+  cursor: move !important;
+}
+
+.editor .extra{
+  padding:10px;
+}
+.editor .extra button{
+  display:block;
+  margin:0 0 10px 0;
+  background: #FFF;
+  border: 1px #888 solid;
+  padding:5px;
+  min-width:160px;
+  text-align:center;
+  min-height:3em;
+}
+.editor .extra button:active{
+  background: #DDD;
+}
+.editor .extra button:hover{
+  background: #EEE;
+}
+.editor .extra button:focus{
+  outline: 0;
+}

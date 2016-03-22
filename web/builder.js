@@ -61,6 +61,7 @@ FnInstance.prototype = {
 
 var Builder = function(el, mirobot, disableLocalstorage){
   var self = this;
+  this.initFunctions();
   this.el = el;
   this.mirobot = mirobot;
   this.fns = {};
@@ -92,7 +93,7 @@ Builder.prototype = {
     var self = this;
     var adjustment;
     this.el.addClass('editor');
-    this.el[0].innerHTML = this.mainUI;
+    this.el[0].innerHTML = this.mainUI();;
     this.setSize();
     window.addEventListener('resize', function(){self.setSize();});
 
@@ -238,7 +239,7 @@ Builder.prototype = {
         if(conf.default === conf.values[j]){
           select += 'selected="selected"';
         }
-        select += '>' + conf.values[j] + '</option>';
+        select += '>' + l(':'+conf.values[j]) + '</option>';
       }
       select += '</select>';
       return select;
@@ -250,12 +251,12 @@ Builder.prototype = {
       f = self.functions[f];
       var fn = '<li class="function fn-' + f.name + ' draggable" data-fntype="' + f.name + '">';
       var content = f.content.str;
-      var re = /{{ ([^\ ]*) }}/g; 
+      var re = /\[\[([^\ ]*)\]\]/g; 
       while ((m = re.exec(content)) !== null) {
           if (m.index === re.lastIndex) {
               re.lastIndex++;
           }
-          content = content.replace('{{ ' + m[1] + ' }}', self.generateInput(f.content[m[1]]));
+          content = content.replace('[[' + m[1] + ']]', self.generateInput(f.content[m[1]]));
       }
       fn += content;
       
@@ -367,80 +368,83 @@ Builder.prototype = {
       }
     });
   },
-  functions:[
-    {
-      name:'move',
-      type:'child',
-      content:{
-        str: l(":move-cmd"),
-        direction: {name: 'direction', input:'option', default:'forward', values:[l(':forward'), l(':back')]},
-        distance: {name: 'distance', input:'number', default:100}
+  functions:undefined,
+  initFunctions: function(){
+    this.functions = [
+      {
+        name:'move',
+        type:'child',
+        content:{
+          str: l(":move-cmd"),
+          direction: {name: 'direction', input:'option', default:'forward', values:['forward', 'back']},
+          distance: {name: 'distance', input:'number', default:100}
+        },
+        run: function(node, mirobot, cb){
+          mirobot.move(node.args().direction, node.args().distance, cb);
+        }
       },
-      run: function(node, mirobot, cb){
-        mirobot.move(node.args().direction, node.args().distance, cb);
-      }
-    },
-    {
-      name:'turn',
-      type:'child',
-      content:{
-        str: l(":turn-cmd"),
-        direction: {name: 'direction', input:'option', default:'left', values:[l(':left'), l(':right')]},
-        angle: {name: 'angle', input:'number', default:90}
+      {
+        name:'turn',
+        type:'child',
+        content:{
+          str: l(":turn-cmd"),
+          direction: {name: 'direction', input:'option', default:'left', values:['left', 'right']},
+          angle: {name: 'angle', input:'number', default:90}
+        },
+        run: function(node, mirobot, cb){
+          mirobot.turn(node.args().direction, node.args().angle, cb);
+        }
       },
-      run: function(node, mirobot, cb){
-        mirobot.turn(node.args().direction, node.args().angle, cb);
-      }
-    },
-    {
-      name:'penup',
-      type:'child',
-      content:{str: l(":penup-cmd")},
-      run: function(node, mirobot, cb){
-        mirobot.penup(cb);
-      }
-    },
-    {
-      name:'pendown',
-      type:'child',
-      content:{str: l(":pendown-cmd")},
-      run: function(node, mirobot, cb){
-        mirobot.pendown(cb);
-      }
-    },
-    {
-      name:'repeat',
-      type:'parent',
-      content:{
-        str: l(":repeat-cmd"),
-        count: {name: 'count', input:'number', default:2}
+      {
+        name:'penup',
+        type:'child',
+        content:{str: l(":penup-cmd")},
+        run: function(node, mirobot, cb){
+          mirobot.penup(cb);
+        }
       },
-      run: function(node, mirobot, cb){
-        for(var i=0; i< node.args().count; i++){
-          for(var j=0; j< node.children.length; j++){
-            node.children[j].run();
+      {
+        name:'pendown',
+        type:'child',
+        content:{str: l(":pendown-cmd")},
+        run: function(node, mirobot, cb){
+          mirobot.pendown(cb);
+        }
+      },
+      {
+        name:'repeat',
+        type:'parent',
+        content:{
+          str: l(":repeat-cmd"),
+          count: {name: 'count', input:'number', default:2}
+        },
+        run: function(node, mirobot, cb){
+          for(var i=0; i< node.args().count; i++){
+            for(var j=0; j< node.children.length; j++){
+              node.children[j].run();
+            }
           }
         }
-      }
-    },
-    {
-      name:'beep',
-      type:'child',
-      content:{
-        str: l(":beep-cmd"),
-        duration: {name: 'duration', input:'number', default:0.5}
       },
-      run: function(node, mirobot, cb){
-        mirobot.beep(node.args().duration * 1000, cb);
+      {
+        name:'beep',
+        type:'child',
+        content:{
+          str: l(":beep-cmd"),
+          duration: {name: 'duration', input:'number', default:0.5}
+        },
+        run: function(node, mirobot, cb){
+          mirobot.beep(node.args().duration * 1000, cb);
+        }
       }
-    }
-  ]
+    ]
+  }
 }
 
 
 
-Builder.prototype.mainUI = '\
-<div class="left container">\
+Builder.prototype.mainUI = function(){
+  return '<div class="left container">\
   <h2>' + l(':toolbox') + '</h2>\
   <ol class="functionList"></ol>\
   <div class="extra">\
@@ -463,3 +467,4 @@ Builder.prototype.mainUI = '\
   </div>\
 </div>\
 ';
+}
