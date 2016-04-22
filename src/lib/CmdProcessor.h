@@ -1,62 +1,53 @@
-#ifndef CmdProcessor_h
-#define CmdProcessor_h
+#ifndef __CmdProcessor_h__
+#define __CmdProcessor_h__
 
 #include "Arduino.h"
 
 class Mirobot;
+class CmdProcessor;
 
 #include "Mirobot.h"
+#include "./lib/ArduinoJson/ArduinoJson.h"
 
-#define INPUT_BUFFER_LENGTH 180
+#define CMD_COUNT 31
+#define JSON_BUFFER_LENGTH 128
+#define OUTPUT_HANDLER_COUNT 2
 
-typedef enum {EXPECT_ATTR, ATTR, DELIM, VAL} parseState_t;
-typedef enum {WAITING, WEBSOCKET_INIT, WEBSOCKET_RESPOND, WEBSOCKET_READY, HTTP_INIT, HTTP_RESPOND, HTTP_READY} httpState_t;
-typedef enum {RAW, HTTP, WEBSOCKET} socketMode_t;
-typedef enum {CLOSED, START, OPENING, READY, RECEIVING, CLOSING, FLUSHING} atState_t;
-
-typedef void (* fp_main) (void *, char *);
+typedef void (Mirobot::*MirobotMemFn)(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+typedef void (* fp) (void *, char *);
 typedef boolean (* fp_ready) (void *);
+typedef void (* msgHandler) (char *);
 
-struct UserCmd {
+struct Cmd {
   const char *cmd;
-  byte type;
-  fp_main fn_main;
-  fp_ready fn_ready;
+  MirobotMemFn func;
+  bool immediate;
 };
 
 class CmdProcessor {
   public:
     CmdProcessor();
-    void addUserCmd(char* cmd, fp_main fn, fp_ready ready);
-    void setup(Stream &s, Mirobot &m);
+    void addCmd(const char cmd[], MirobotMemFn func, bool immediate);
+    bool addOutputHandler(msgHandler);
     void process();
-    void collideNotify(const char msg[]);
-    void followNotify(int state);
+    void notify(const char[], ArduinoJson::JsonObject &);
+    void setMirobot(Mirobot &);
+    void sendComplete();
+    boolean processMsg(char * msg);
+    boolean in_process;
   private:
     boolean processLine();
-    void extractAttr(const char attr[4], char *json, char *output, char len);
-    void processCmd(char &cmd, char &arg, char &id);
+    void processCmd(const char &cmd, const char &arg, const char &id);
     void runCmd(char &cmd, char &arg, char &id);
-    void sendResponse(const char state[], const char msg[], char &id);
-    Stream* _s;
-    Mirobot* _m;
-    httpState_t httpState;
-    socketMode_t socketMode;
+    void sendResponse(const char state[], ArduinoJson::JsonObject &, const char &id);
     char webSocketKey[61];
-    char newLineCount;
-    char input_buffer[INPUT_BUFFER_LENGTH];
-    byte input_buffer_pos;
-    boolean in_process;
-    atState_t at_cmd_state;
     char current_id[11];
-    unsigned long last_char;
-    boolean processWSFrame();
     boolean processJSON();
-    boolean processHeaders();
-    void startAtCmdReset();
-    void handleAtCmds(char incomingByte);
-    void resetCheck();
-    long resetTimeout;
+    Mirobot* _m;
+    Cmd _cmds[CMD_COUNT];
+    int cmd_counter;
+    msgHandler outputHandlers[OUTPUT_HANDLER_COUNT];
 };
+
 
 #endif
