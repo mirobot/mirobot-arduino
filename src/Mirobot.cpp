@@ -33,13 +33,12 @@ void Mirobot::setup(){
   pinMode(STATUS_LED, OUTPUT);
 }
 
-void Mirobot::setup(Stream &s){
-  // Call the main setup routine
-  setup();
-  // We will be non-blocking so we can continue to process serial input
+void Mirobot::enableSerial(){
   blocking = false;
-  // Set up the command processor
-  p.setup(s, self());
+  // Set up Serial and add it to be processed
+  Serial.begin(57600);
+  manager.addOutputHandler(sendSerialMsg);
+  serialEnabled = true;
 }
 
 void Mirobot::initSettings(){
