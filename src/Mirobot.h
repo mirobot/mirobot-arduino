@@ -4,7 +4,10 @@
 #include "Arduino.h"
 #include "lib/HotStepper.h"
 #include "lib/CmdProcessor.h"
+#include "lib/ArduinoJson/ArduinoJson.h"
 #include <EEPROM.h>
+
+#define SERIAL_BUFFER_LENGTH 180
 
 #define STEPS_PER_TURN    2048.0f
 
@@ -46,7 +49,7 @@
 
 typedef enum {UP, DOWN} penState_t;
 
-typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideState_t;
+typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideStatus_t;
 
 struct Settings {
   uint8_t      settingsVersion;
@@ -58,8 +61,8 @@ struct Settings {
 class Mirobot {
   public:
     Mirobot();
-    void setup();
-    void setup(Stream &s);
+    void begin();
+    void enableSerial();
     void forward(int distance);
     void back(int distance);
     void right(int angle);
@@ -69,14 +72,13 @@ class Mirobot {
     void pause();
     void resume();
     void stop();
-    void reset();
     void follow();
     int  followState();
     void collide();
     void collideState(char &state);
     void beep(int);
     boolean ready();
-    void process();
+    void loop();
     void version(char);
     void calibrateSlack(unsigned int);
     void calibrateMove(float);
@@ -97,9 +99,36 @@ class Mirobot {
     void checkState();
     void initSettings();
     void saveSettings();
+    void checkReady();
+    void initCmds();
+    void _version(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _ping(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _uptime(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _pause(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _resume(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _stop(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collideState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collideNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _followState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _followNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _slackCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _moveCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _turnCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateMove(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateTurn(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _forward(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _back(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _right(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _left(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _penup(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _pendown(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _follow(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collide(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _beep(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateSlack(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     char lastCollideState;
     int lastFollowState;
-    collideState_t _collideState;
+    collideStatus_t _collideStatus;
     unsigned long lastLedChange;
     Mirobot& self() { return *this; }
     penState_t penState;
@@ -117,6 +146,11 @@ class Mirobot {
     int pendown_delay;
     long beepComplete;
     boolean calibratingSlack;
+    bool serialEnabled = false;
+    unsigned long last_char;
+    char serial_buffer[SERIAL_BUFFER_LENGTH];
+    int serial_buffer_pos;
+    void serialHandler();
 };
 
 #endif

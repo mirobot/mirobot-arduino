@@ -3,10 +3,12 @@
 
 HotStepper motor1(&PORTB, 0b00011101);
 HotStepper motor2(&PORTD, 0b11110000);
-CmdProcessor p;
 
-// Pointer to the bootloader memory location
-void* bl = (void *) 0x3c00;
+CmdProcessor manager;
+
+void sendSerialMsg(char * msg){
+  Serial.println(msg);
+}
 
 Mirobot::Mirobot(){
   blocking = true;
@@ -16,7 +18,7 @@ Mirobot::Mirobot(){
   version(2);
 }
 
-void Mirobot::setup(){
+void Mirobot::begin(){
   // Initialise the steppers
   HotStepper::setup(TIMER1INT);
   // Set up the pen arm servo
@@ -24,7 +26,7 @@ void Mirobot::setup(){
   // Set up the collision sensor inputs and state
   pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
   pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
-  _collideState = NORMAL;
+  _collideStatus = NORMAL;
   // Initialise the pen arm into the up position
   setPenState(UP);
   // Pull the settings out of memory
@@ -34,10 +36,15 @@ void Mirobot::setup(){
 }
 
 void Mirobot::enableSerial(){
+  // Use non-blocking mode to process serial
   blocking = false;
+  // Set up the commands
+  initCmds();
   // Set up Serial and add it to be processed
   Serial.begin(57600);
+  // Add the output handler for responses
   manager.addOutputHandler(sendSerialMsg);
+  // Enable serial processing
   serialEnabled = true;
 }
 
@@ -72,6 +79,134 @@ void Mirobot::saveSettings(){
   for (unsigned int t=0; t<sizeof(settings); t++){
     EEPROM.write(EEPROM_OFFSET + 2 + t, *((char*)&settings + t));
   }
+}
+
+void Mirobot::initCmds(){
+  manager.setMirobot(self());
+  //             Command name        Handler function             // Returns immediately
+  manager.addCmd("version",          &Mirobot::_version,          true);
+  manager.addCmd("ping",             &Mirobot::_ping,             true);
+  manager.addCmd("uptime",           &Mirobot::_uptime,           true);
+  manager.addCmd("pause",            &Mirobot::_pause,            true);
+  manager.addCmd("resume",           &Mirobot::_resume,           true);
+  manager.addCmd("stop",             &Mirobot::_stop,             true);
+  manager.addCmd("collideState",     &Mirobot::_collideState,     true);
+  manager.addCmd("collideNotify",    &Mirobot::_collideNotify,    true);
+  manager.addCmd("followState",      &Mirobot::_followState,      true);
+  manager.addCmd("followNotify",     &Mirobot::_followNotify,     true);
+  manager.addCmd("slackCalibration", &Mirobot::_slackCalibration, true);
+  manager.addCmd("moveCalibration",  &Mirobot::_moveCalibration,  true);
+  manager.addCmd("turnCalibration",  &Mirobot::_turnCalibration,  true);
+  manager.addCmd("calibrateMove",    &Mirobot::_calibrateMove,    true);
+  manager.addCmd("calibrateTurn",    &Mirobot::_calibrateTurn,    true);
+  manager.addCmd("forward",          &Mirobot::_forward,          false);
+  manager.addCmd("back",             &Mirobot::_back,             false);
+  manager.addCmd("right",            &Mirobot::_right,            false);
+  manager.addCmd("left",             &Mirobot::_left,             false);
+  manager.addCmd("penup",            &Mirobot::_penup,            false);
+  manager.addCmd("pendown",          &Mirobot::_pendown,          false);
+  manager.addCmd("follow",           &Mirobot::_follow,           false);
+  manager.addCmd("collide",          &Mirobot::_collide,          false);
+  manager.addCmd("beep",             &Mirobot::_beep,             false);
+  manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
+}
+
+void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = MIROBOT_VERSION;
+}
+
+void Mirobot::_ping(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){}
+
+void Mirobot::_uptime(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = millis();
+}
+
+void Mirobot::_pause(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  pause();
+}
+
+void Mirobot::_resume(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  resume();
+}
+
+void Mirobot::_stop(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  stop();
+}
+
+void Mirobot::_collideState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  //collideState(msg);
+}
+
+void Mirobot::_collideNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  collideNotify = !!strcmp(inJson["arg"], "false");
+}
+
+void Mirobot::_followState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  //sprintf(&msg, "%d", followState());
+}
+
+void Mirobot::_followNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  followNotify = !!strcmp(inJson["arg"].asString(), "false");
+}
+
+void Mirobot::_slackCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = settings.slackCalibration;
+}
+
+void Mirobot::_moveCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = settings.moveCalibration;
+}
+
+void Mirobot::_turnCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = settings.turnCalibration;
+}
+
+void Mirobot::_calibrateMove(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  calibrateMove(atof(inJson["arg"].asString()));
+}
+
+void Mirobot::_calibrateTurn(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  calibrateTurn(atof(inJson["arg"].asString()));
+}
+
+void Mirobot::_forward(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  forward(atoi(inJson["arg"].asString()));
+}
+
+void Mirobot::_back(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  back(atoi(inJson["arg"].asString()));
+}
+
+void Mirobot::_right(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  right(atoi(inJson["arg"].asString()));
+}
+
+void Mirobot::_left(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  left(atoi(inJson["arg"].asString()));
+}
+
+void Mirobot::_penup(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  penup();
+}
+
+void Mirobot::_pendown(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  pendown();
+}
+
+void Mirobot::_follow(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  follow();
+}
+
+void Mirobot::_collide(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  collide();
+}
+
+void Mirobot::_beep(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  beep(atoi(inJson["arg"].asString()));
+}
+
+void Mirobot::_calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  calibrateSlack(atoi(inJson["arg"].asString()));
 }
 
 void Mirobot::takeUpSlack(byte motor1Dir, byte motor2Dir){
@@ -140,12 +275,6 @@ void Mirobot::stop(){
   following = false;
   colliding = false;
   calibratingSlack = false;
-}
-
-void Mirobot::reset(){
-  // Give the response message time to get out
-  delay(100);
-  goto *bl;
 }
 
 void Mirobot::follow(){
@@ -223,29 +352,29 @@ void Mirobot::followHandler(){
 void Mirobot::collideHandler(){
   boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-  if(_collideState == NORMAL){
+  if(_collideStatus == NORMAL){
     if(collideLeft){
-      _collideState = LEFT_REVERSE;
+      _collideStatus = LEFT_REVERSE;
       back(50);
     }else if(collideRight){
-      _collideState = RIGHT_REVERSE;
+      _collideStatus = RIGHT_REVERSE;
       back(50);
     }else{
       forward(10);
     }
   }else if(motor1.ready() && motor2.ready()){
-    switch(_collideState){
+    switch(_collideStatus){
       case LEFT_REVERSE :
-        _collideState = LEFT_TURN;
+        _collideStatus = LEFT_TURN;
         right(90);
         break;
       case RIGHT_REVERSE :
-        _collideState = RIGHT_TURN;
+        _collideStatus = RIGHT_TURN;
         left(90);
         break;
       case LEFT_TURN :
       case RIGHT_TURN :
-        _collideState = NORMAL;
+        _collideStatus = NORMAL;
       case NORMAL :
         break;
     }
@@ -283,17 +412,22 @@ void Mirobot::autoHandler(){
 }
 
 void Mirobot::sensorNotifier(){
+  StaticJsonBuffer<60> outBuffer;
+  JsonObject& outMsg = outBuffer.createObject();
   if(collideNotify){
     boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
     boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
     char currentCollideState = collideRight | (collideLeft << 1);
     if(currentCollideState != lastCollideState){
       if(collideLeft && collideRight){
-        p.collideNotify("both");
+        outMsg["msg"] = "both";
+        manager.notify("collide", outMsg);
       }else if(collideLeft){
-        p.collideNotify("left");
+        outMsg["msg"] = "left";
+        manager.notify("collide", outMsg);
       }else if(collideRight){
-        p.collideNotify("right");
+        outMsg["msg"] = "right";
+        manager.notify("collide", outMsg);
       }
       lastCollideState = currentCollideState;
     }
@@ -301,7 +435,8 @@ void Mirobot::sensorNotifier(){
   if(followNotify){
     int currentFollowState = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
     if(currentFollowState != lastFollowState){
-      p.followNotify(currentFollowState);
+      outMsg["msg"] = currentFollowState;
+      manager.notify("follow", outMsg);
     }
     lastFollowState = currentFollowState;
   }
@@ -347,11 +482,40 @@ void Mirobot::calibrateHandler(){
   }
 }
 
-void Mirobot::process(){
+void Mirobot::serialHandler(){
+  if(!serialEnabled) return;
+  // process incoming data
+  if (Serial.available() > 0){
+    last_char = millis();
+    char incomingByte = Serial.read();
+    if((incomingByte == '\r' || incomingByte == '\n') && serial_buffer_pos && manager.processMsg(serial_buffer)){
+      // It's been successfully processed as a line
+      serial_buffer_pos = 0;
+    }else{
+      // Not a line to process so store for processing
+      serial_buffer[serial_buffer_pos++] = incomingByte;
+      serial_buffer[serial_buffer_pos] = 0;
+    }
+  }else{
+    //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
+    if(millis() - last_char >= 500){
+      serial_buffer_pos = 0;
+    }
+  }
+}
+
+void Mirobot::checkReady(){
+  if(manager.in_process && ready()){
+    manager.sendComplete();
+  }
+}
+
+void Mirobot::loop(){
   ledHandler();
   servoHandler();
   autoHandler();
   calibrateHandler();
   sensorNotifier();
-  p.process();
+  serialHandler();
+  checkReady();
 }
