@@ -27,9 +27,10 @@
 
 #define MIROBOT_VERSION "2.0.6"
 
-#define EEPROM_OFFSET 16
+#define EEPROM_OFFSET 0
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
+#define SETTINGS_VERSION 1
 
 #define SERVO_PIN 3
 #define SERVO_PULSES 15
@@ -48,8 +49,7 @@ typedef enum {UP, DOWN} penState_t;
 typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideState_t;
 
 struct Settings {
-  byte         hwmajor;
-  byte         hwminor;
+  uint8_t      settingsVersion;
   unsigned int slackCalibration;
   float        moveCalibration;
   float        turnCalibration;
@@ -75,7 +75,6 @@ class Mirobot {
     void collide();
     void collideState(char &state);
     void beep(int);
-    void setHwVersion(char&);
     boolean ready();
     void process();
     void version(char);

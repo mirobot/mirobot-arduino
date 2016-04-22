@@ -43,14 +43,13 @@ void Mirobot::setup(Stream &s){
 }
 
 void Mirobot::initSettings(){
-  if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2){
+  if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2 && EEPROM.read(EEPROM_OFFSET + 2) == SETTINGS_VERSION){
     // We've previously written something valid to the EEPROM
     for (unsigned int t=0; t<sizeof(settings); t++){
       *((char*)&settings + t) = EEPROM.read(EEPROM_OFFSET + 2 + t);
     }
   }else{
-    settings.hwmajor = 0;
-    settings.hwminor = 0;
+    settings.settingsVersion = SETTINGS_VERSION;
     settings.slackCalibration = 14;
     settings.moveCalibration = 1.0f;
     settings.turnCalibration = 1.0f;
@@ -64,36 +63,6 @@ void Mirobot::saveSettings(){
   for (unsigned int t=0; t<sizeof(settings); t++){
     EEPROM.write(EEPROM_OFFSET + 2 + t, *((char*)&settings + t));
   }
-}
-
-void Mirobot::setHwVersion(char &version){
-  char v[4];
-  int i;
-  int v_ptr = 0;
-  char *ptr = &version;
-  for(i = 0; i < 9; i++){
-    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
-      v[v_ptr++] = ptr[i];
-    }
-    if(ptr[i] == '.'){
-      v[v_ptr++] = '\0';
-      break;
-    }
-  }
-  settings.hwmajor = atoi(v);
-  v_ptr = 0;
-  for(i = i; i < 9; i++){
-    if(ptr[i] >= 0x30 && ptr[i] <= 0x39){
-      v[v_ptr++] = ptr[i];
-    }
-    if(ptr[i] == '\0'){
-      v[v_ptr++] = '\0';
-      break;
-    }
-  }
-  v[v_ptr] = '\0';
-  settings.hwminor = atoi(v);
-  saveSettings();
 }
 
 void Mirobot::takeUpSlack(byte motor1Dir, byte motor2Dir){
