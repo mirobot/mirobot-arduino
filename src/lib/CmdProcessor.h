@@ -16,7 +16,7 @@ class CmdProcessor;
 typedef void (Mirobot::*MirobotMemFn)(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
 typedef void (* fp) (void *, char *);
 typedef boolean (* fp_ready) (void *);
-typedef void (* msgHandler) (char *);
+typedef void (* msgHandler) (ArduinoJson::JsonObject &);
 
 struct Cmd {
   const char *cmd;

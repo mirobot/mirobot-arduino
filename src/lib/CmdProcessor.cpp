@@ -23,7 +23,7 @@ void CmdProcessor::setMirobot(Mirobot &m){
 
 void CmdProcessor::addCmd(const char cmd[], MirobotMemFn func, bool immediate){
   if (cmd_counter == CMD_COUNT) {
-    Serial.println("Too many commands defined");
+    Serial.println(F("Too many commands defined"));
     return;
   }
   _cmds[cmd_counter].cmd = cmd;
@@ -84,13 +84,12 @@ boolean CmdProcessor::processMsg(char * msg){
       outMsg["msg"] = "Command not recognised";
       sendResponse("error", outMsg, *id);
     }
-    return true;
   }else{
     //Error parsing
     outMsg["msg"] = "JSON parse error";
     sendResponse("error", outMsg, (const char &)"");
   }
-  return false;
+  return true;
 }
 
 void CmdProcessor::sendComplete(){
@@ -103,16 +102,14 @@ void CmdProcessor::sendComplete(){
 }
 
 void CmdProcessor::sendResponse(const char status[], ArduinoJson::JsonObject &outMsg, const char &id){
-  char buffer[JSON_BUFFER_LENGTH];
   if(strlen(&id)){
     outMsg["id"] = &id;
   }
   outMsg["status"] = status;
-  outMsg.printTo(buffer, sizeof(buffer));
 
   for(int i = 0; i< OUTPUT_HANDLER_COUNT; i++){
     if(outputHandlers[i] != NULL){
-      outputHandlers[i](buffer);
+      outputHandlers[i](outMsg);
     }
   }
 }

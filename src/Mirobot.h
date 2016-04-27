@@ -2,6 +2,7 @@
 #define Mirobot_h
 
 #include "Arduino.h"
+#include "lib/SerialWebSocket.h"
 #include "lib/HotStepper.h"
 #include "lib/CmdProcessor.h"
 #include "lib/ArduinoJson/ArduinoJson.h"
