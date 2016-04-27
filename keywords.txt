@@ -1,5 +1,6 @@
 Mirobot	KEYWORD1
-setup	KEYWORD2
+begin	KEYWORD2
+enableSerial	KEYWORD2
 forward	KEYWORD2
 back	KEYWORD2
 right	KEYWORD2
@@ -9,14 +10,14 @@ pendown	KEYWORD2
 pause	KEYWORD2
 resume	KEYWORD2
 stop	KEYWORD2
-reset	KEYWORD2
 follow	KEYWORD2
 followState	KEYWORD2
 collide	KEYWORD2
 collideState	KEYWORD2
 beep	KEYWORD2
 ready	KEYWORD2
-process	KEYWORD2
+loop	KEYWORD2
+versionNum	KEYWORD2
 blocking	KEYWORD2
 collideNotify	KEYWORD2
 followNotify	KEYWORD2
