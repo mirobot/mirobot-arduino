@@ -1,5 +1,4 @@
 #include <Mirobot.h>
-#include <EEPROM.h>
 
 /*
 This sketch demonstrates simple line following without using the built in library
@@ -8,7 +7,7 @@ This sketch demonstrates simple line following without using the built in librar
 Mirobot mirobot;
 
 void setup(){
-  mirobot.setup();
+  mirobot.begin();
 }
 
 void loop(){

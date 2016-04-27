@@ -21,10 +21,10 @@ Mirobot::Mirobot(){
   lastLedChange = millis();
   calibratingSlack = false;
   beepComplete = 0;
-  version(2);
 }
 
-void Mirobot::begin(){
+void Mirobot::begin(unsigned char v){
+  version(v);
   // Initialise the steppers
   HotStepper::setup(TIMER1INT);
   // Set up the pen arm servo
@@ -39,6 +39,10 @@ void Mirobot::begin(){
   initSettings();
   // Set up the status LED
   pinMode(STATUS_LED, OUTPUT);
+}
+
+void Mirobot::begin(){
+  begin(2);
 }
 
 void Mirobot::enableSerial(){

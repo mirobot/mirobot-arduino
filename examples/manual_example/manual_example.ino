@@ -1,5 +1,4 @@
 #include <Mirobot.h>
-#include <EEPROM.h>
 
 /*
 This sketch shows how you can program Mirobot directly in the Arduino environment.
@@ -8,7 +7,7 @@ This sketch shows how you can program Mirobot directly in the Arduino environmen
 Mirobot mirobot;
 
 void setup(){
-  mirobot.setup();
+  mirobot.begin();
 }
 
 void loop(){
