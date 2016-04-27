@@ -5,9 +5,15 @@ HotStepper motor1(&PORTB, 0b00011101);
 HotStepper motor2(&PORTD, 0b11110000);
 
 CmdProcessor manager;
+SerialWebSocket v1ws(Serial);
 
-void sendSerialMsg(char * msg){
-  Serial.println(msg);
+void sendSerialMsg(ArduinoJson::JsonObject &outMsg){
+  outMsg.printTo(Serial);
+  Serial.println();
+}
+
+void sendSerialMsgV1(ArduinoJson::JsonObject &outMsg){
+  v1ws.send(outMsg);
 }
 
 Mirobot::Mirobot(){
@@ -43,7 +49,11 @@ void Mirobot::enableSerial(){
   // Set up Serial and add it to be processed
   Serial.begin(57600);
   // Add the output handler for responses
-  manager.addOutputHandler(sendSerialMsg);
+  if(versionNum == 1){
+    manager.addOutputHandler(sendSerialMsgV1);
+  }else{
+    manager.addOutputHandler(sendSerialMsg);
+  }
   // Enable serial processing
   serialEnabled = true;
 }
@@ -483,18 +493,39 @@ void Mirobot::calibrateHandler(){
 }
 
 void Mirobot::serialHandler(){
+  int s;
   if(!serialEnabled) return;
   // process incoming data
-  if (Serial.available() > 0){
-    last_char = millis();
-    char incomingByte = Serial.read();
-    if((incomingByte == '\r' || incomingByte == '\n') && serial_buffer_pos && manager.processMsg(serial_buffer)){
-      // It's been successfully processed as a line
-      serial_buffer_pos = 0;
-    }else{
-      // Not a line to process so store for processing
-      serial_buffer[serial_buffer_pos++] = incomingByte;
-      serial_buffer[serial_buffer_pos] = 0;
+  s = Serial.available();
+  if (s > 0){
+    for(int i = 0; i<s; i++){
+      last_char = millis();
+      char incomingByte = Serial.read();
+      if(versionNum == 1){
+        // Handle the WebSocket parsing over serial for v1
+        serial_buffer[serial_buffer_pos++] = incomingByte;
+        if(serial_buffer_pos == SERIAL_BUFFER_LENGTH) serial_buffer_pos = 0;
+        processState_t res = v1ws.process(serial_buffer, serial_buffer_pos);
+        // Handle as a stream of commands
+        if(res == SERWS_FRAME_PROCESSED){
+          // It's been successfully processed as a line
+          manager.processMsg(serial_buffer);
+          serial_buffer_pos = 0;
+        }else if(res == SERWS_HEADERS_PROCESSED || res == SERWS_FRAME_ERROR || res == SERWS_FRAME_EMPTY){
+          serial_buffer_pos = 0;
+        }
+      }else{
+        // Handle as a stream of commands
+        if((incomingByte == '\r' || incomingByte == '\n') && serial_buffer_pos && manager.processMsg(serial_buffer)){
+          // It's been successfully processed as a line
+          serial_buffer_pos = 0;
+        }else{
+          // Not a line to process so store for processing
+          serial_buffer[serial_buffer_pos++] = incomingByte;
+          if(serial_buffer_pos == SERIAL_BUFFER_LENGTH) serial_buffer_pos = 0;
+          serial_buffer[serial_buffer_pos] = 0;
+        }
+      }
     }
   }else{
     //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up

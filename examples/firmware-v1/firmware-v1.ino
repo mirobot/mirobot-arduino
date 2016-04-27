@@ -1,14 +1,13 @@
 #include <Mirobot.h>
-#include <EEPROM.h>
 
 Mirobot mirobot;
 
 void setup(){
-  Serial.begin(57600);
+  mirobot.begin();
   mirobot.version(1);
-  mirobot.setup(Serial);
+  mirobot.enableSerial();
 }
 
 void loop(){
-  mirobot.process();
+  mirobot.loop();
 }
