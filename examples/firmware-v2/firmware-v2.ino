@@ -1,5 +1,4 @@
 #include <Mirobot.h>
-#include <EEPROM.h>
 
 Mirobot mirobot;
 

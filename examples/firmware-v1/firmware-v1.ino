@@ -3,8 +3,7 @@
 Mirobot mirobot;
 
 void setup(){
-  mirobot.begin();
-  mirobot.version(1);
+  mirobot.begin(1);
   mirobot.enableSerial();
 }
 

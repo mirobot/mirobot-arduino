@@ -63,6 +63,7 @@ class Mirobot {
   public:
     Mirobot();
     void begin();
+    void begin(unsigned char);
     void enableSerial();
     void forward(int distance);
     void back(int distance);
@@ -80,7 +81,6 @@ class Mirobot {
     void beep(int);
     boolean ready();
     void loop();
-    void version(char);
     void calibrateSlack(unsigned int);
     void calibrateMove(float);
     void calibrateTurn(float);
@@ -101,6 +101,7 @@ class Mirobot {
     void initSettings();
     void saveSettings();
     void checkReady();
+    void version(char);
     void initCmds();
     void _version(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _ping(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
