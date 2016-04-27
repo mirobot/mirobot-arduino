@@ -116,7 +116,9 @@ void Mirobot::initCmds(){
 }
 
 void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = MIROBOT_VERSION;
+  char temp[9];
+  sprintf(temp, "%d.%s", versionNum, MIROBOT_SUB_VERSION);
+  outJson["msg"] = strdup(temp);
 }
 
 void Mirobot::_ping(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){}
