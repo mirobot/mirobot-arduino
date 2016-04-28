@@ -26,7 +26,7 @@ Mirobot::Mirobot(){
 void Mirobot::begin(unsigned char v){
   version(v);
   // Initialise the steppers
-  HotStepper::setup(TIMER1INT);
+  HotStepper::begin();
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
   // Set up the collision sensor inputs and state

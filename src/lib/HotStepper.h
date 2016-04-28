@@ -1,25 +1,20 @@
-// Version 72503c42 from github.com/bjpirt/HotStepper
+#ifndef __HotStepper_h__
+#define __HotStepper_h__
 
-#ifndef HotStepper_h
-#define HotStepper_h
 #include "Arduino.h"
-
 
 #define FORWARD 1
 #define BACKWARD 0
 
-#define TIMER1INT 1
-#define TIMER2INT 2
-
-#define HOTSTEPPER_TIMER1
+#define PULSE_PER_3MS 1000
 
 class HotStepper {
   public:
     HotStepper(volatile uint8_t* port, byte offset);
-    static void setup();
-    static void setup(char timer);
+    static void begin();
     void instanceSetup();
     void turn(long steps, byte direction);
+    void turn(long steps, byte direction, float rate);
     boolean ready();
     long remaining();
     void release();
@@ -43,6 +38,8 @@ class HotStepper {
     void trigger();
     byte pad(byte, byte);
     byte unpad(byte, byte);
+    int _counterMax;
+    int counter;
 };
 
 #endif
