@@ -84,7 +84,8 @@ class Mirobot {
     void calibrateSlack(unsigned int);
     void calibrateMove(float);
     void calibrateTurn(float);
-    char versionNum;
+    char hWversion;
+    char versionStr[9];
     Settings settings;
     boolean blocking;
     boolean collideNotify;
