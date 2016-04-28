@@ -53,7 +53,7 @@ void Mirobot::enableSerial(){
   // Set up Serial and add it to be processed
   Serial.begin(57600);
   // Add the output handler for responses
-  if(versionNum == 1){
+  if(hWversion == 1){
     manager.addOutputHandler(sendSerialMsgV1);
   }else{
     manager.addOutputHandler(sendSerialMsg);
@@ -126,9 +126,7 @@ void Mirobot::initCmds(){
 }
 
 void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  char temp[9];
-  sprintf(temp, "%d.%s", versionNum, MIROBOT_SUB_VERSION);
-  outJson["msg"] = strdup(temp);
+  outJson["msg"] = versionStr;
 }
 
 void Mirobot::_ping(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){}
@@ -348,15 +346,15 @@ void Mirobot::followHandler(){
   if(motor1.ready() && motor2.ready()){
     int diff = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
     if(diff > 5){
-      if(versionNum == 1){
+      if(hWversion == 1){
         right(1);
-      }else if(versionNum == 2){
+      }else if(hWversion == 2){
         left(1);
       }
     }else if(diff < -5){
-      if(versionNum == 1){
+      if(hWversion == 1){
         left(1);
-      }else if(versionNum == 2){
+      }else if(hWversion == 2){
         right(1);
       }
     }else{
@@ -460,7 +458,8 @@ void Mirobot::sensorNotifier(){
 
 // This allows for runtime configuration of which hardware is used
 void Mirobot::version(char v){
-  versionNum = v;
+  hWversion = v;
+  sprintf(versionStr, "%d.%s", hWversion, MIROBOT_SUB_VERSION);
   if(v == 1){
     steps_per_mm = STEPS_PER_MM_V1;
     steps_per_degree = STEPS_PER_DEGREE_V1;
@@ -507,7 +506,7 @@ void Mirobot::serialHandler(){
     for(int i = 0; i<s; i++){
       last_char = millis();
       char incomingByte = Serial.read();
-      if(versionNum == 1){
+      if(hWversion == 1){
         // Handle the WebSocket parsing over serial for v1
         serial_buffer[serial_buffer_pos++] = incomingByte;
         if(serial_buffer_pos == SERIAL_BUFFER_LENGTH) serial_buffer_pos = 0;
