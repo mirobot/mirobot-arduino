@@ -123,6 +123,7 @@ void Mirobot::initCmds(){
   cmdProcessor.addCmd("collide",          &Mirobot::_collide,          false);
   cmdProcessor.addCmd("beep",             &Mirobot::_beep,             false);
   cmdProcessor.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
+  cmdProcessor.addCmd("arc",              &Mirobot::_arc,              false);
 }
 
 void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
@@ -236,6 +237,12 @@ void Mirobot::_calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::Json
   calibrateSlack(atoi(inJson["arg"].asString()));
 }
 
+void Mirobot::_arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  if(inJson["arg"].is<JsonArray&>() && inJson["arg"].size() == 2){
+    arc(inJson["arg"][0].as<float>(), inJson["arg"][1].as<float>());
+  }
+}
+
 void Mirobot::takeUpSlack(byte rightMotorDir, byte leftMotorDir){
   // Take up the slack on each motor
   if(rightMotor.lastDirection != rightMotorDir){
@@ -333,6 +340,39 @@ collideState_t Mirobot::collideState(){
 void Mirobot::beep(int duration){
   tone(SPEAKER_PIN, NOTE_C4, duration);
   beepComplete = millis() + duration;
+}
+
+void Mirobot::arc(float angle, float radius){
+  // Drawing an arc means drawing three concentric circular arcs with two wheels and a pen at the centre
+  // So we need to work out the length of the outer, wheel arcs and then move them by that amount in the same time
+  // To calculate the distance we can work out:
+  //   circumference = 2 * pi * radius
+  //   distance = circumference * (angle / 360)
+  // combined:
+  //   distance = 2 * pi * radius * (angle / 360)
+  //   distance = 2 * 3.141593 * radius * (angle / 360)
+  //   distance = 6.283185 * radius * (angle / 360)
+  //   distance = 0.017453 * radius * angle
+  float right_distance, left_distance;
+  float right_rate, left_rate;
+  int wheel_distance = 120;
+
+  // extract the sign of the direction (+1 / -1) which will give us the correct distance to turn the steppers
+  char dir = (radius > 0) - (radius < 0);
+
+  // work out the distances each wheel has to move
+  right_distance = 0.017453 * (radius - (wheel_distance / 2.0)) * angle * dir;
+  left_distance = 0.017453 * (radius + (wheel_distance / 2.0)) * angle * dir;
+
+  // work out the rate the wheel should move relative to full speed
+  right_rate = abs((right_distance > left_distance) ? 1 : (right_distance / left_distance));
+  left_rate = abs((right_distance > left_distance) ? (left_distance / right_distance) : 1);
+
+  // move the wheels
+  takeUpSlack((right_distance > 0), (left_distance < 0));
+  rightMotor.turn(abs(right_distance) * steps_per_mm * settings.moveCalibration, (right_distance > 0), right_rate);
+  leftMotor.turn(abs(left_distance) * steps_per_mm * settings.moveCalibration, (left_distance < 0), left_rate);
+  wait();
 }
 
 boolean Mirobot::ready(){
@@ -480,11 +520,13 @@ void Mirobot::version(char v){
     steps_per_degree = STEPS_PER_DEGREE_V1;
     penup_delay = PENUP_DELAY_V1;
     pendown_delay = PENDOWN_DELAY_V1;
+    wheel_distance = WHEEL_DISTANCE_V1;
   }else if(v == 2){
     steps_per_mm = STEPS_PER_MM_V2;
     steps_per_degree = STEPS_PER_DEGREE_V2;
     penup_delay = PENUP_DELAY_V2;
     pendown_delay = PENDOWN_DELAY_V2;
+    wheel_distance = WHEEL_DISTANCE_V2;
   }
 }
 

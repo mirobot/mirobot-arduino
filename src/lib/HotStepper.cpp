@@ -48,7 +48,7 @@ void HotStepper::begin(){
   TCCR1B = 0;     // same for TCCR1B
   TCNT1  = 0; // initialize counter value to 0
   // set compare match register to desired timer count:
-  OCR1A = 47 / (16/clockCyclesPerMicrosecond());
+  OCR1A = ((48000 / PULSE_PER_3MS)-1) / (16/clockCyclesPerMicrosecond());
   // turn on CTC mode:
   TCCR1B |= (1 << WGM12);
   // Set CS10 bit for no prescaler:
@@ -77,7 +77,7 @@ void HotStepper::turn(long steps, byte direction){
 void HotStepper::turn(long steps, byte direction, float rate){
   _remaining = steps;
   _dir = direction;
-  _counterMax = PULSE_PER_3MS * rate;
+  _counterMax = PULSE_PER_3MS / rate;
   counter = _counterMax;
   lastDirection = direction;
 }
@@ -168,9 +168,9 @@ void HotStepper::trigger(){
   if(!--counter){
     counter = _counterMax;
     setNextStep();
-    if(nextInstance){
-      nextInstance->trigger();
-    }
+  }
+  if(nextInstance){
+    nextInstance->trigger();
   }
 }
 

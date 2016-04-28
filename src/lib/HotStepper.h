@@ -6,7 +6,7 @@
 #define FORWARD 1
 #define BACKWARD 0
 
-#define PULSE_PER_3MS 1000
+#define PULSE_PER_3MS 100
 
 class HotStepper {
   public:

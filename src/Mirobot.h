@@ -30,7 +30,7 @@
 
 #define STATUS_LED 13
 
-#define MIROBOT_SUB_VERSION "0.8"
+#define MIROBOT_SUB_VERSION "1.0"
 
 #define EEPROM_OFFSET 0
 #define MAGIC_BYTE_1 0xF0
@@ -81,6 +81,7 @@ class Mirobot {
     void collide();
     collideState_t collideState();
     void beep(int);
+    void arc(float, float);
     boolean ready();
     void loop();
     void calibrateSlack(unsigned int);
@@ -131,6 +132,7 @@ class Mirobot {
     void _collide(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _beep(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _calibrateSlack(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _arc(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     char lastCollideState;
     int lastFollowState;
     collideStatus_t _collideStatus;
@@ -149,6 +151,7 @@ class Mirobot {
     float steps_per_degree;
     int penup_delay;
     int pendown_delay;
+    int wheel_distance;
     long beepComplete;
     boolean calibratingSlack;
     bool serialEnabled = false;
