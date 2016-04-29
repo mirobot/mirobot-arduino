@@ -50,6 +50,7 @@
 
 typedef enum {UP, DOWN} penState_t;
 
+typedef enum {NONE=0, RIGHT, LEFT, BOTH} collideState_t;
 typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideStatus_t;
 
 struct Settings {
@@ -77,7 +78,7 @@ class Mirobot {
     void follow();
     int  followState();
     void collide();
-    void collideState(char &state);
+    collideState_t collideState();
     void beep(int);
     boolean ready();
     void loop();

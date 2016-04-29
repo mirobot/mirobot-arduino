@@ -138,7 +138,20 @@ void Mirobot::_stop(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &ou
 }
 
 void Mirobot::_collideState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  //collideState(msg);
+  switch(collideState()){
+    case NONE:
+      outJson["msg"] = "none";
+      break;
+    case LEFT:
+      outJson["msg"] = "left";
+      break;
+    case RIGHT:
+      outJson["msg"] = "right";
+      break;
+    case BOTH:
+      outJson["msg"] = "both";
+      break;
+  }
 }
 
 void Mirobot::_collideNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
@@ -146,7 +159,7 @@ void Mirobot::_collideNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonO
 }
 
 void Mirobot::_followState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  //sprintf(&msg, "%d", followState());
+  outJson["msg"] = followState();
 }
 
 void Mirobot::_followNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
@@ -293,17 +306,17 @@ void Mirobot::collide(){
   colliding = true;
 }
 
-void Mirobot::collideState(char &state){
+collideState_t Mirobot::collideState(){
   boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
   boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
   if(collideLeft && collideRight){
-    strcpy(&state, "both");
+    return BOTH;
   }else if(collideLeft){
-    strcpy(&state, "left");
+    return LEFT;
   }else if(collideRight){
-    strcpy(&state, "right");
+    return RIGHT;
   }else{
-    strcpy(&state, "none");
+    return NONE;
   }
 }
 
@@ -419,21 +432,23 @@ void Mirobot::sensorNotifier(){
   StaticJsonBuffer<60> outBuffer;
   JsonObject& outMsg = outBuffer.createObject();
   if(collideNotify){
-    boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
-    boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-    char currentCollideState = collideRight | (collideLeft << 1);
+    collideState_t currentCollideState = collideState();
     if(currentCollideState != lastCollideState){
-      if(collideLeft && collideRight){
-        outMsg["msg"] = "both";
-        manager.notify("collide", outMsg);
-      }else if(collideLeft){
-        outMsg["msg"] = "left";
-        manager.notify("collide", outMsg);
-      }else if(collideRight){
-        outMsg["msg"] = "right";
-        manager.notify("collide", outMsg);
-      }
       lastCollideState = currentCollideState;
+      switch(currentCollideState){
+        case BOTH:
+          outMsg["msg"] = "both";
+          manager.notify("collide", outMsg);
+          break;
+        case LEFT:
+          outMsg["msg"] = "left";
+          manager.notify("collide", outMsg);
+          break;
+        case RIGHT:
+          outMsg["msg"] = "right";
+          manager.notify("collide", outMsg);
+          break;
+      }
     }
   }
   if(followNotify){
