@@ -48,13 +48,23 @@ void Mirobot::initSettings(){
     for (unsigned int t=0; t<sizeof(settings); t++){
       *((char*)&settings + t) = EEPROM.read(EEPROM_OFFSET + 2 + t);
     }
-  }else{
-    settings.settingsVersion = SETTINGS_VERSION;
-    settings.slackCalibration = 14;
-    settings.moveCalibration = 1.0f;
-    settings.turnCalibration = 1.0f;
-    saveSettings();
+    // Sanity check the values to make sure they look correct
+    if(settings.settingsVersion == SETTINGS_VERSION &&
+       settings.slackCalibration > 50 &&
+       settings.moveCalibration > 0.5f &&
+       settings.moveCalibration < 1.5f &&
+       settings.turnCalibration > 0.5f &&
+       settings.turnCalibration < 1.5f){
+      // The values look OK so let's leave them as they are
+      return;
+    }
   }
+  // Either this is the first boot or the settings are bad so let's reset them
+  settings.settingsVersion = SETTINGS_VERSION;
+  settings.slackCalibration = 14;
+  settings.moveCalibration = 1.0f;
+  settings.turnCalibration = 1.0f;
+  saveSettings();
 }
 
 void Mirobot::saveSettings(){
