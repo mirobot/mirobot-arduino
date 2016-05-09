@@ -30,7 +30,7 @@
 
 #define STATUS_LED 13
 
-#define MIROBOT_SUB_VERSION "0.7"
+#define MIROBOT_SUB_VERSION "0.8"
 
 #define EEPROM_OFFSET 0
 #define MAGIC_BYTE_1 0xF0
