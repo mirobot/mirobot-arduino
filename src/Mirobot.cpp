@@ -4,7 +4,7 @@
 HotStepper motor1(&PORTB, 0b00011101);
 HotStepper motor2(&PORTD, 0b11110000);
 
-CmdProcessor manager;
+CmdProcessor cmdProcessor;
 SerialWebSocket v1ws(Serial);
 
 void sendSerialMsg(ArduinoJson::JsonObject &outMsg){
@@ -53,10 +53,10 @@ void Mirobot::enableSerial(){
   // Set up Serial and add it to be processed
   Serial.begin(57600);
   // Add the output handler for responses
-  if(hWversion == 1){
-    manager.addOutputHandler(sendSerialMsgV1);
+  if(hwVersion == 1){
+    cmdProcessor.addOutputHandler(sendSerialMsgV1);
   }else{
-    manager.addOutputHandler(sendSerialMsg);
+    cmdProcessor.addOutputHandler(sendSerialMsg);
   }
   // Enable serial processing
   serialEnabled = true;
@@ -96,33 +96,33 @@ void Mirobot::saveSettings(){
 }
 
 void Mirobot::initCmds(){
-  manager.setMirobot(self());
+  cmdProcessor.setMirobot(self());
   //             Command name        Handler function             // Returns immediately
-  manager.addCmd("version",          &Mirobot::_version,          true);
-  manager.addCmd("ping",             &Mirobot::_ping,             true);
-  manager.addCmd("uptime",           &Mirobot::_uptime,           true);
-  manager.addCmd("pause",            &Mirobot::_pause,            true);
-  manager.addCmd("resume",           &Mirobot::_resume,           true);
-  manager.addCmd("stop",             &Mirobot::_stop,             true);
-  manager.addCmd("collideState",     &Mirobot::_collideState,     true);
-  manager.addCmd("collideNotify",    &Mirobot::_collideNotify,    true);
-  manager.addCmd("followState",      &Mirobot::_followState,      true);
-  manager.addCmd("followNotify",     &Mirobot::_followNotify,     true);
-  manager.addCmd("slackCalibration", &Mirobot::_slackCalibration, true);
-  manager.addCmd("moveCalibration",  &Mirobot::_moveCalibration,  true);
-  manager.addCmd("turnCalibration",  &Mirobot::_turnCalibration,  true);
-  manager.addCmd("calibrateMove",    &Mirobot::_calibrateMove,    true);
-  manager.addCmd("calibrateTurn",    &Mirobot::_calibrateTurn,    true);
-  manager.addCmd("forward",          &Mirobot::_forward,          false);
-  manager.addCmd("back",             &Mirobot::_back,             false);
-  manager.addCmd("right",            &Mirobot::_right,            false);
-  manager.addCmd("left",             &Mirobot::_left,             false);
-  manager.addCmd("penup",            &Mirobot::_penup,            false);
-  manager.addCmd("pendown",          &Mirobot::_pendown,          false);
-  manager.addCmd("follow",           &Mirobot::_follow,           false);
-  manager.addCmd("collide",          &Mirobot::_collide,          false);
-  manager.addCmd("beep",             &Mirobot::_beep,             false);
-  manager.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
+  cmdProcessor.addCmd("version",          &Mirobot::_version,          true);
+  cmdProcessor.addCmd("ping",             &Mirobot::_ping,             true);
+  cmdProcessor.addCmd("uptime",           &Mirobot::_uptime,           true);
+  cmdProcessor.addCmd("pause",            &Mirobot::_pause,            true);
+  cmdProcessor.addCmd("resume",           &Mirobot::_resume,           true);
+  cmdProcessor.addCmd("stop",             &Mirobot::_stop,             true);
+  cmdProcessor.addCmd("collideState",     &Mirobot::_collideState,     true);
+  cmdProcessor.addCmd("collideNotify",    &Mirobot::_collideNotify,    true);
+  cmdProcessor.addCmd("followState",      &Mirobot::_followState,      true);
+  cmdProcessor.addCmd("followNotify",     &Mirobot::_followNotify,     true);
+  cmdProcessor.addCmd("slackCalibration", &Mirobot::_slackCalibration, true);
+  cmdProcessor.addCmd("moveCalibration",  &Mirobot::_moveCalibration,  true);
+  cmdProcessor.addCmd("turnCalibration",  &Mirobot::_turnCalibration,  true);
+  cmdProcessor.addCmd("calibrateMove",    &Mirobot::_calibrateMove,    true);
+  cmdProcessor.addCmd("calibrateTurn",    &Mirobot::_calibrateTurn,    true);
+  cmdProcessor.addCmd("forward",          &Mirobot::_forward,          false);
+  cmdProcessor.addCmd("back",             &Mirobot::_back,             false);
+  cmdProcessor.addCmd("right",            &Mirobot::_right,            false);
+  cmdProcessor.addCmd("left",             &Mirobot::_left,             false);
+  cmdProcessor.addCmd("penup",            &Mirobot::_penup,            false);
+  cmdProcessor.addCmd("pendown",          &Mirobot::_pendown,          false);
+  cmdProcessor.addCmd("follow",           &Mirobot::_follow,           false);
+  cmdProcessor.addCmd("collide",          &Mirobot::_collide,          false);
+  cmdProcessor.addCmd("beep",             &Mirobot::_beep,             false);
+  cmdProcessor.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
 }
 
 void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
@@ -359,15 +359,15 @@ void Mirobot::followHandler(){
   if(motor1.ready() && motor2.ready()){
     int diff = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
     if(diff > 5){
-      if(hWversion == 1){
+      if(hwVersion == 1){
         right(1);
-      }else if(hWversion == 2){
+      }else if(hwVersion == 2){
         left(1);
       }
     }else if(diff < -5){
-      if(hWversion == 1){
+      if(hwVersion == 1){
         left(1);
-      }else if(hWversion == 2){
+      }else if(hwVersion == 2){
         right(1);
       }
     }else{
@@ -448,15 +448,15 @@ void Mirobot::sensorNotifier(){
       switch(currentCollideState){
         case BOTH:
           outMsg["msg"] = "both";
-          manager.notify("collide", outMsg);
+          cmdProcessor.notify("collide", outMsg);
           break;
         case LEFT:
           outMsg["msg"] = "left";
-          manager.notify("collide", outMsg);
+          cmdProcessor.notify("collide", outMsg);
           break;
         case RIGHT:
           outMsg["msg"] = "right";
-          manager.notify("collide", outMsg);
+          cmdProcessor.notify("collide", outMsg);
           break;
       }
     }
@@ -465,7 +465,7 @@ void Mirobot::sensorNotifier(){
     int currentFollowState = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
     if(currentFollowState != lastFollowState){
       outMsg["msg"] = currentFollowState;
-      manager.notify("follow", outMsg);
+      cmdProcessor.notify("follow", outMsg);
     }
     lastFollowState = currentFollowState;
   }
@@ -473,8 +473,8 @@ void Mirobot::sensorNotifier(){
 
 // This allows for runtime configuration of which hardware is used
 void Mirobot::version(char v){
-  hWversion = v;
-  sprintf(versionStr, "%d.%s", hWversion, MIROBOT_SUB_VERSION);
+  hwVersion = v;
+  sprintf(versionStr, "%d.%s", hwVersion, MIROBOT_SUB_VERSION);
   if(v == 1){
     steps_per_mm = STEPS_PER_MM_V1;
     steps_per_degree = STEPS_PER_DEGREE_V1;
@@ -521,7 +521,7 @@ void Mirobot::serialHandler(){
     for(int i = 0; i<s; i++){
       last_char = millis();
       char incomingByte = Serial.read();
-      if(hWversion == 1){
+      if(hwVersion == 1){
         // Handle the WebSocket parsing over serial for v1
         serial_buffer[serial_buffer_pos++] = incomingByte;
         if(serial_buffer_pos == SERIAL_BUFFER_LENGTH) serial_buffer_pos = 0;
@@ -529,14 +529,14 @@ void Mirobot::serialHandler(){
         // Handle as a stream of commands
         if(res == SERWS_FRAME_PROCESSED){
           // It's been successfully processed as a line
-          manager.processMsg(serial_buffer);
+          cmdProcessor.processMsg(serial_buffer);
           serial_buffer_pos = 0;
         }else if(res == SERWS_HEADERS_PROCESSED || res == SERWS_FRAME_ERROR || res == SERWS_FRAME_EMPTY){
           serial_buffer_pos = 0;
         }
       }else{
         // Handle as a stream of commands
-        if((incomingByte == '\r' || incomingByte == '\n') && serial_buffer_pos && manager.processMsg(serial_buffer)){
+        if((incomingByte == '\r' || incomingByte == '\n') && serial_buffer_pos && cmdProcessor.processMsg(serial_buffer)){
           // It's been successfully processed as a line
           serial_buffer_pos = 0;
         }else{
@@ -556,8 +556,8 @@ void Mirobot::serialHandler(){
 }
 
 void Mirobot::checkReady(){
-  if(manager.in_process && ready()){
-    manager.sendComplete();
+  if(cmdProcessor.in_process && ready()){
+    cmdProcessor.sendComplete();
   }
 }
 
