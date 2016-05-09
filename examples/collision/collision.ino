@@ -1,5 +1,4 @@
 #include <Mirobot.h>
-#include <EEPROM.h>
 
 /*
 This sketch demonstrates simple collision detection without using the built in library
@@ -10,7 +9,7 @@ typedef enum {M_NORMAL, M_RIGHT_REVERSE, M_RIGHT_TURN, M_LEFT_REVERSE, M_LEFT_TU
 collideState_ty collideState;
 
 void setup(){
-  mirobot.setup();
+  mirobot.begin();
 }
 
 void loop(){

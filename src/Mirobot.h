@@ -2,11 +2,16 @@
 #define Mirobot_h
 
 #include "Arduino.h"
+#include "lib/SerialWebSocket.h"
 #include "lib/HotStepper.h"
 #include "lib/CmdProcessor.h"
+#include "lib/ArduinoJson/ArduinoJson.h"
 #include <EEPROM.h>
 
-#define STEPS_PER_TURN    2048.0f
+#define SERIAL_BUFFER_LENGTH 180
+
+// The steppers have a gear ratio of 1:63.7 and have 32 steps per turn. 32 x 63.7 = 2038.4
+#define STEPS_PER_TURN    2038.0f
 
 #define CIRCUMFERENCE_MM_V1  251.3f
 #define WHEEL_DISTANCE_V1    126.0f
@@ -25,7 +30,7 @@
 
 #define STATUS_LED 13
 
-#define MIROBOT_VERSION "2.0.7"
+#define MIROBOT_SUB_VERSION "0.7"
 
 #define EEPROM_OFFSET 0
 #define MAGIC_BYTE_1 0xF0
@@ -46,7 +51,8 @@
 
 typedef enum {UP, DOWN} penState_t;
 
-typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideState_t;
+typedef enum {NONE=0, RIGHT, LEFT, BOTH} collideState_t;
+typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideStatus_t;
 
 struct Settings {
   uint8_t      settingsVersion;
@@ -58,8 +64,9 @@ struct Settings {
 class Mirobot {
   public:
     Mirobot();
-    void setup();
-    void setup(Stream &s);
+    void begin();
+    void begin(unsigned char);
+    void enableSerial();
     void forward(int distance);
     void back(int distance);
     void right(int angle);
@@ -69,19 +76,18 @@ class Mirobot {
     void pause();
     void resume();
     void stop();
-    void reset();
     void follow();
     int  followState();
     void collide();
-    void collideState(char &state);
+    collideState_t collideState();
     void beep(int);
     boolean ready();
-    void process();
-    void version(char);
+    void loop();
     void calibrateSlack(unsigned int);
     void calibrateMove(float);
     void calibrateTurn(float);
-    char versionNum;
+    char hwVersion;
+    char versionStr[9];
     Settings settings;
     boolean blocking;
     boolean collideNotify;
@@ -97,9 +103,37 @@ class Mirobot {
     void checkState();
     void initSettings();
     void saveSettings();
+    void checkReady();
+    void version(char);
+    void initCmds();
+    void _version(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _ping(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _uptime(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _pause(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _resume(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _stop(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collideState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collideNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _followState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _followNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _slackCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _moveCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _turnCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateMove(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateTurn(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _forward(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _back(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _right(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _left(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _penup(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _pendown(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _follow(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _collide(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _beep(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _calibrateSlack(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     char lastCollideState;
     int lastFollowState;
-    collideState_t _collideState;
+    collideStatus_t _collideStatus;
     unsigned long lastLedChange;
     Mirobot& self() { return *this; }
     penState_t penState;
@@ -117,6 +151,11 @@ class Mirobot {
     int pendown_delay;
     long beepComplete;
     boolean calibratingSlack;
+    bool serialEnabled = false;
+    unsigned long last_char;
+    char serial_buffer[SERIAL_BUFFER_LENGTH];
+    int serial_buffer_pos;
+    void serialHandler();
 };
 
 #endif
