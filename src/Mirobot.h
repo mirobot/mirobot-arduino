@@ -10,7 +10,8 @@
 
 #define SERIAL_BUFFER_LENGTH 180
 
-#define STEPS_PER_TURN    2048.0f
+// The steppers have a gear ratio of 1:63.7 and have 32 steps per turn. 32 x 63.7 = 2038.4
+#define STEPS_PER_TURN    2038.0f
 
 #define CIRCUMFERENCE_MM_V1  251.3f
 #define WHEEL_DISTANCE_V1    126.0f
