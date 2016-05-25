@@ -1,3 +1,5 @@
+#ifdef AVR
+
 #include "Arduino.h"
 #include "HotStepper.h"
 
@@ -207,3 +209,5 @@ ISR(TIMER1_COMPA_vect)
 {
   HotStepper::triggerTop();
 }
+
+#endif //#ifdef AVR

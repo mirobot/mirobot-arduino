@@ -1,11 +1,27 @@
 #include "Arduino.h"
 #include "Mirobot.h"
 
+#ifdef AVR
 HotStepper rightMotor(&PORTB, 0b00011101);
 HotStepper leftMotor(&PORTD, 0b11110000);
+#endif
+#ifdef ESP8266
+ShiftStepper rightMotor(0);
+ShiftStepper leftMotor(1);
+
+MirobotWifi wifi;
+
+WS2812B led(LED_PIN);
+#endif
 
 CmdProcessor cmdProcessor;
 SerialWebSocket v1ws(Serial);
+
+#ifdef ESP8266
+void handleWsMsg(char * msg){
+  cmdProcessor.processMsg(msg);
+}
+#endif
 
 void sendSerialMsg(ArduinoJson::JsonObject &outMsg){
   outMsg.printTo(Serial);
@@ -18,6 +34,7 @@ void sendSerialMsgV1(ArduinoJson::JsonObject &outMsg){
 
 Mirobot::Mirobot(){
   blocking = true;
+  nextADCRead = 0;
   lastLedChange = millis();
   calibratingSlack = false;
   beepComplete = 0;
@@ -26,12 +43,19 @@ Mirobot::Mirobot(){
 void Mirobot::begin(unsigned char v){
   version(v);
   // Initialise the steppers
+  #ifdef AVR
   HotStepper::begin();
+  #endif
+  #ifdef ESP8266
+  ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
+  #endif
   // Set up the pen arm servo
   pinMode(SERVO_PIN, OUTPUT);
+  #ifdef AVR
   // Set up the collision sensor inputs and state
   pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
   pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
+  #endif
   _collideStatus = NORMAL;
   // Initialise the pen arm into the up position
   setPenState(UP);
@@ -51,16 +75,29 @@ void Mirobot::enableSerial(){
   // Set up the commands
   initCmds();
   // Set up Serial and add it to be processed
-  Serial.begin(57600);
   // Add the output handler for responses
   if(hwVersion == 1){
+    Serial.begin(57600);
     cmdProcessor.addOutputHandler(sendSerialMsgV1);
-  }else{
+  }else if(hwVersion == 2){
+    Serial.begin(57600);
+    cmdProcessor.addOutputHandler(sendSerialMsg);
+  }else if(hwVersion == 3){
+    Serial.begin(230400);
+    Serial.setTimeout(1); 
     cmdProcessor.addOutputHandler(sendSerialMsg);
   }
   // Enable serial processing
   serialEnabled = true;
 }
+
+#ifdef ESP8266
+void Mirobot::enableWifi(){
+  wifi.begin(&settings);
+  wifi.onMsg(handleWsMsg);
+  cmdProcessor.addOutputHandler(wifi.sendWebSocketMsg);
+}
+#endif
 
 void Mirobot::initSettings(){
   if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2 && EEPROM.read(EEPROM_OFFSET + 2) == SETTINGS_VERSION){
@@ -93,6 +130,9 @@ void Mirobot::saveSettings(){
   for (unsigned int t=0; t<sizeof(settings); t++){
     EEPROM.write(EEPROM_OFFSET + 2 + t, *((char*)&settings + t));
   }
+#ifdef ESP8266
+  EEPROM.commit();
+#endif
 }
 
 void Mirobot::initCmds(){
@@ -124,6 +164,13 @@ void Mirobot::initCmds(){
   cmdProcessor.addCmd("beep",             &Mirobot::_beep,             false);
   cmdProcessor.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
   cmdProcessor.addCmd("arc",              &Mirobot::_arc,              false);
+#ifdef ESP8266
+  cmdProcessor.addCmd("getConfig",        &Mirobot::_getConfig,        true);
+  cmdProcessor.addCmd("setConfig",        &Mirobot::_setConfig,        true);
+  cmdProcessor.addCmd("resetConfig",      &Mirobot::_resetConfig,      true);
+  cmdProcessor.addCmd("freeHeap",         &Mirobot::_freeHeap,         true);
+  cmdProcessor.addCmd("startWifiScan",    &Mirobot::_startWifiScan,    true);
+#endif
 }
 
 void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
@@ -243,6 +290,95 @@ void Mirobot::_arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &out
   }
 }
 
+#ifdef ESP8266
+void Mirobot::_getConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  JsonObject& msg = outJson.createNestedObject("msg");
+  const char *modes[] = {"OFF","STA","AP","APSTA"};
+  msg["sta_ssid"] = settings.sta_ssid;
+  msg["sta_dhcp"] = settings.sta_dhcp;
+  msg["sta_rssi"] = MirobotWifi::getStaRSSI();
+  if(!settings.sta_dhcp){
+    msg["sta_fixedip"] = IPAddress(settings.sta_fixedip).toString();
+    msg["sta_fixedgateway"] = IPAddress(settings.sta_fixedgateway).toString();
+    msg["sta_fixednetmask"] = IPAddress(settings.sta_fixednetmask).toString();
+  }
+  msg["sta_ip"] = MirobotWifi::getStaIp().toString();
+  msg["ap_ssid"] = settings.ap_ssid;
+  msg["ap_encrypted"] = !!strlen(settings.ap_pass);
+  msg["discovery"] = settings.discovery;
+  msg["wifi_mode"] = modes[MirobotWifi::getWifiMode()];
+}
+
+void Mirobot::_setConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  IPAddress addr;
+  if(!(inJson.containsKey("arg") && inJson["arg"].is<JsonObject&>())) return;
+
+  // Set the SSID to connect to
+  if(inJson["arg"].asObject().containsKey("sta_ssid")){
+    strcpy(settings.sta_ssid, inJson["arg"]["sta_ssid"]);
+  }
+  // Set the password for the SSID
+  if(inJson["arg"].asObject().containsKey("sta_pass")){
+    strcpy(settings.sta_pass, inJson["arg"]["sta_pass"]);
+  }
+  // Change the name of the built in access point
+  if(inJson["arg"].asObject().containsKey("ap_ssid")){
+    strcpy(settings.ap_ssid, inJson["arg"]["ap_ssid"]);
+  }
+  // Set the password for the access point
+  if(inJson["arg"].asObject().containsKey("ap_pass")){
+    strcpy(settings.ap_pass, inJson["arg"]["ap_pass"]);
+  }
+  // Set whether to use DHCP
+  if(inJson["arg"].asObject().containsKey("sta_dhcp")){
+    settings.sta_dhcp = inJson["arg"]["sta_dhcp"];
+  }
+  // Use a fixed IP address
+  if(inJson["arg"].asObject().containsKey("sta_fixedip")){
+    addr.fromString(inJson["arg"]["sta_fixedip"].asString());
+    settings.sta_fixedip = addr;
+  }
+  // The DNS server to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixedgateway")){
+    addr.fromString(inJson["arg"]["sta_fixedgateway"].asString());
+    settings.sta_fixedgateway = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixednetmask")){
+    addr.fromString(inJson["arg"]["sta_fixednetmask"].asString());
+    settings.sta_fixednetmask = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixeddns1")){
+    addr.fromString(inJson["arg"]["sta_fixeddns1"].asString());
+    settings.sta_fixeddns1 = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("sta_fixeddns2")){
+    addr.fromString(inJson["arg"]["sta_fixeddns2"].asString());
+    settings.sta_fixeddns2 = addr;
+  }
+  // The netmask to use for the fixed IP
+  if(inJson["arg"].asObject().containsKey("discovery")){
+    settings.discovery = inJson["arg"]["discovery"];
+  }
+  wifi.setupWifi();
+  saveSettings();
+}
+void Mirobot::_resetConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  settings.settingsVersion = 0;
+  saveSettings();
+  initSettings();
+  wifi.setupWifi();
+}
+void Mirobot::_freeHeap(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = ESP.getFreeHeap();
+}
+void Mirobot::_startWifiScan(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  MirobotWifi::startWifiScan();
+}
+#endif
+
 void Mirobot::takeUpSlack(byte rightMotorDir, byte leftMotorDir){
   // Take up the slack on each motor
   if(rightMotor.lastDirection != rightMotorDir){
@@ -316,7 +452,7 @@ void Mirobot::follow(){
 }
 
 int Mirobot::followState(){
-  return analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+  return leftLineSensor - rightLineSensor;
 }
 
 void Mirobot::collide(){
@@ -324,13 +460,12 @@ void Mirobot::collide(){
 }
 
 collideState_t Mirobot::collideState(){
-  boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
-  boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
-  if(collideLeft && collideRight){
+  readSensors();
+  if(leftCollide && rightCollide){
     return BOTH;
-  }else if(collideLeft){
+  }else if(leftCollide){
     return LEFT;
-  }else if(collideRight){
+  }else if(rightCollide){
     return RIGHT;
   }else{
     return NONE;
@@ -397,7 +532,7 @@ void Mirobot::setPenState(penState_t state){
 
 void Mirobot::followHandler(){
   if(rightMotor.ready() && leftMotor.ready()){
-    int diff = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+    int diff = leftLineSensor - rightLineSensor;
     if(diff > 5){
       if(hwVersion == 1){
         right(1);
@@ -417,13 +552,12 @@ void Mirobot::followHandler(){
 }
 
 void Mirobot::collideHandler(){
-  boolean collideLeft = !digitalRead(LEFT_COLLIDE_SENSOR);
-  boolean collideRight = !digitalRead(RIGHT_COLLIDE_SENSOR);
+  readSensors();
   if(_collideStatus == NORMAL){
-    if(collideLeft){
+    if(leftCollide){
       _collideStatus = LEFT_REVERSE;
       back(50);
-    }else if(collideRight){
+    }else if(rightCollide){
       _collideStatus = RIGHT_REVERSE;
       back(50);
     }else{
@@ -450,7 +584,13 @@ void Mirobot::collideHandler(){
 
 void Mirobot::ledHandler(){
   long t = millis();
+#ifdef AVR
   digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
+#endif
+#ifdef ESP8266
+  uint8_t val = (abs((millis() % (uint32_t)LED_PULSE_TIME) - LED_PULSE_TIME/2) / (LED_PULSE_TIME/2)) * 50;
+  led.setRGBA(LED_COLOUR_NORMAL, val);
+#endif
 }
 
 void Mirobot::servoHandler(){
@@ -478,6 +618,45 @@ void Mirobot::autoHandler(){
   }
 }
 
+#ifdef AVR
+void Mirobot::readSensors(){
+  leftCollide = !digitalRead(LEFT_COLLIDE_SENSOR);
+  rightCollide = !digitalRead(RIGHT_COLLIDE_SENSOR);
+  leftLineSensor = analogRead(LEFT_LINE_SENSOR);
+  rightLineSensor = analogRead(RIGHT_LINE_SENSOR);
+}
+#endif
+
+#ifdef ESP8266
+void Mirobot::readSensors(){
+  uint8_t temp[4];
+  if(millis() >= nextADCRead){
+    nextADCRead = millis() + 10;
+
+    // Fetch the data from the ADC
+    Wire.beginTransmission(PCF8591_ADDRESS); // wake up PCF8591
+    Wire.write(0x04); // control byte - read ADC0 and increment counter
+    Wire.endTransmission();
+    Wire.requestFrom(PCF8591_ADDRESS, 6);
+    Wire.read(); // Padding bytes to allow conversion to complete
+    Wire.read(); // Padding bytes to allow conversion to complete
+    temp[0] = Wire.read();
+    temp[1] = Wire.read();
+    temp[2] = Wire.read();
+    temp[3] = Wire.read();
+
+    // Sanity check to make sure I2C data hasn't gone out of sync
+    if((temp[2] == 0 || temp[2] == 255) && (temp[3] == 0 || temp[3] == 255)){
+      leftLineSensor = temp[0];
+      rightLineSensor = temp[1];
+
+      leftCollide = !!temp[2];
+      rightCollide = !!temp[3];
+    }
+  }
+}
+#endif
+
 void Mirobot::sensorNotifier(){
   StaticJsonBuffer<60> outBuffer;
   JsonObject& outMsg = outBuffer.createObject();
@@ -502,7 +681,8 @@ void Mirobot::sensorNotifier(){
     }
   }
   if(followNotify){
-    int currentFollowState = analogRead(LEFT_LINE_SENSOR) - analogRead(RIGHT_LINE_SENSOR);
+    readSensors();
+    int currentFollowState = leftLineSensor - rightLineSensor;
     if(currentFollowState != lastFollowState){
       outMsg["msg"] = currentFollowState;
       cmdProcessor.notify("follow", outMsg);
@@ -521,7 +701,7 @@ void Mirobot::version(char v){
     penup_delay = PENUP_DELAY_V1;
     pendown_delay = PENDOWN_DELAY_V1;
     wheel_distance = WHEEL_DISTANCE_V1;
-  }else if(v == 2){
+  }else{
     steps_per_mm = STEPS_PER_MM_V2;
     steps_per_degree = STEPS_PER_DEGREE_V2;
     penup_delay = PENUP_DELAY_V2;
@@ -529,6 +709,27 @@ void Mirobot::version(char v){
     wheel_distance = WHEEL_DISTANCE_V2;
   }
 }
+
+#ifdef ESP8266
+void Mirobot::networkNotifier(){
+  if(!MirobotWifi::networkChanged) return;
+  StaticJsonBuffer<500> outBuffer;
+  JsonObject& outMsg = outBuffer.createObject();
+  MirobotWifi::networkChanged = false;
+  _getConfig(outMsg, outMsg);
+  cmdProcessor.notify("network", outMsg);
+}
+
+void Mirobot::wifiScanNotifier(){
+  if(!MirobotWifi::wifiScanReady) return;
+  StaticJsonBuffer<1000> outBuffer;
+  JsonObject& outMsg = outBuffer.createObject();
+  JsonArray& msg = outMsg.createNestedArray("msg");
+  MirobotWifi::wifiScanReady = false;
+  wifi.getWifiScanData(msg);
+  cmdProcessor.notify("wifiScan", outMsg);
+}
+#endif
 
 void Mirobot::calibrateSlack(unsigned int amount){
   settings.slackCalibration = amount;
@@ -609,6 +810,10 @@ void Mirobot::loop(){
   autoHandler();
   calibrateHandler();
   sensorNotifier();
+#ifdef ESP8266
+  networkNotifier();
+  wifiScanNotifier();
+#endif
   serialHandler();
   checkReady();
 }

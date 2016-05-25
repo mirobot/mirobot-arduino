@@ -7,7 +7,7 @@ CmdProcessor::CmdProcessor(){
   current_id[0] = 0;
 }
 
-bool CmdProcessor::addOutputHandler(msgHandler h){
+bool CmdProcessor::addOutputHandler(jsonMsgHandler h){
   for(int i = 0; i< OUTPUT_HANDLER_COUNT; i++){
     if(outputHandlers[i] == NULL){
       outputHandlers[i] = h;

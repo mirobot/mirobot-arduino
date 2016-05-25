@@ -2,11 +2,21 @@
 #define Mirobot_h
 
 #include "Arduino.h"
-#include "lib/SerialWebSocket.h"
-#include "lib/HotStepper.h"
 #include "lib/CmdProcessor.h"
+#include "lib/SerialWebSocket.h"
 #include "lib/ArduinoJson/ArduinoJson.h"
 #include <EEPROM.h>
+
+#ifdef AVR
+#include "lib/HotStepper.h"
+#endif
+#ifdef ESP8266
+#include "Wire.h"
+#include "lib/ShiftStepper.h"
+#include "lib/MirobotWifi.h"
+#include "lib/MirobotWebSocket.h"
+#include "lib/WS2812B.h"
+#endif
 
 #define SERIAL_BUFFER_LENGTH 180
 
@@ -37,29 +47,74 @@
 #define MAGIC_BYTE_2 0x0D
 #define SETTINGS_VERSION 1
 
-#define SERVO_PIN 3
+#define NOTE_C4  262
+
 #define SERVO_PULSES 15
 
+#ifdef AVR
+#define SERVO_PIN 3
+
 #define SPEAKER_PIN 9
-#define NOTE_C4  262
 
 #define LEFT_LINE_SENSOR  A0
 #define RIGHT_LINE_SENSOR A1
 
 #define LEFT_COLLIDE_SENSOR  A3
 #define RIGHT_COLLIDE_SENSOR A2
+#endif
+
+#ifdef ESP8266
+#define SERVO_PIN 4
+
+#define SHIFT_REG_DATA  12
+#define SHIFT_REG_CLOCK 13
+#define SHIFT_REG_LATCH 14
+
+#define SPEAKER_PIN 5
+
+#define LINE_LED_ENABLE 16
+
+#define LED_PIN 15
+#define LED_PULSE_TIME 6000.0
+#define LED_COLOUR_NORMAL 0xFFFFFF
+
+#define PCF8591_ADDRESS B1001000
+#define I2C_DATA  0
+#define I2C_CLOCK 2
+#endif
 
 typedef enum {UP, DOWN} penState_t;
 
 typedef enum {NONE=0, RIGHT, LEFT, BOTH} collideState_t;
 typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideStatus_t;
 
-struct Settings {
+#ifdef AVR
+struct MirobotSettings {
   uint8_t      settingsVersion;
   unsigned int slackCalibration;
   float        moveCalibration;
   float        turnCalibration;
 };
+#endif
+#ifdef ESP8266
+struct MirobotSettings {
+  uint8_t      settingsVersion;
+  unsigned int slackCalibration;
+  float        moveCalibration;
+  float        turnCalibration;
+  char         sta_ssid[32];
+  char         sta_pass[64];
+  bool         sta_dhcp;
+  uint32_t     sta_fixedip;
+  uint32_t     sta_fixedgateway;
+  uint32_t     sta_fixednetmask;
+  uint32_t     sta_fixeddns1;
+  uint32_t     sta_fixeddns2;
+  char         ap_ssid[32];
+  char         ap_pass[64];
+  bool         discovery;
+};
+#endif
 
 class Mirobot {
   public:
@@ -67,6 +122,9 @@ class Mirobot {
     void begin();
     void begin(unsigned char);
     void enableSerial();
+#ifdef ESP8266
+    void enableWifi();
+#endif
     void forward(int distance);
     void back(int distance);
     void right(int angle);
@@ -89,7 +147,7 @@ class Mirobot {
     void calibrateTurn(float);
     char hwVersion;
     char versionStr[9];
-    Settings settings;
+    MirobotSettings settings;
     boolean blocking;
     boolean collideNotify;
     boolean followNotify;
@@ -100,6 +158,11 @@ class Mirobot {
     void ledHandler();
     void servoHandler();
     void autoHandler();
+    void readSensors();
+#ifdef ESP8266
+    void networkNotifier();
+    void wifiScanNotifier();
+#endif
     void sensorNotifier();
     void checkState();
     void initSettings();
@@ -107,6 +170,7 @@ class Mirobot {
     void checkReady();
     void version(char);
     void initCmds();
+    void serialHandler();
     void _version(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _ping(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _uptime(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
@@ -133,6 +197,13 @@ class Mirobot {
     void _beep(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _calibrateSlack(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
     void _arc(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+#ifdef ESP8266
+    void _getConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _setConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _resetConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _freeHeap(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void _startWifiScan(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+#endif
     char lastCollideState;
     int lastFollowState;
     collideStatus_t _collideStatus;
@@ -154,11 +225,15 @@ class Mirobot {
     int wheel_distance;
     long beepComplete;
     boolean calibratingSlack;
+    long nextADCRead;
     bool serialEnabled = false;
     unsigned long last_char;
     char serial_buffer[SERIAL_BUFFER_LENGTH];
     int serial_buffer_pos;
-    void serialHandler();
+    boolean leftCollide;
+    boolean rightCollide;
+    uint8_t leftLineSensor;
+    uint8_t rightLineSensor;
 };
 
 #endif
