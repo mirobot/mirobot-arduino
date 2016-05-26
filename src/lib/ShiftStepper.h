@@ -15,6 +15,7 @@ class ShiftStepper {
     static void setup(int, int, int);
     void instanceSetup();
     void turn(long steps, byte direction);
+    void turn(long steps, byte direction, float rate);
     boolean ready();
     long remaining();
     void release();

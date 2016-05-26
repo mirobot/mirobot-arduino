@@ -75,6 +75,10 @@ void ShiftStepper::turn(long steps, byte direction){
   startTimer();
 }
 
+void ShiftStepper::turn(long steps, byte direction, float rate){
+  turn(steps, direction);
+}
+
 boolean ShiftStepper::ready(){
   return (_remaining == 0);
 }
