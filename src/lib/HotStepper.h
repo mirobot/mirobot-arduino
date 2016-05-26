@@ -22,6 +22,7 @@ class HotStepper {
     void pause();
     void resume();
     void stop();
+    boolean checkReady();
     byte lastDirection;
   private:
     static HotStepper *firstInstance;
@@ -31,6 +32,8 @@ class HotStepper {
     volatile uint8_t* _port;
     byte _pinmask;
     volatile long _remaining;
+    static void disableInterrupts();
+    static void enableInterrupts();
     byte _dir;
     byte nextStep();
     void setStep(byte);

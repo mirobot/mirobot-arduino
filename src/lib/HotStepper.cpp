@@ -42,20 +42,7 @@ void HotStepper::begin(){
   if(firstInstance){
     firstInstance->instanceSetup();
   }
-  // initialize Timer2 for a 3ms duty cycle
-  cli();      // disable global interrupts
-  TCCR1A = 0;     // set entire TCCR1A register to 0
-  TCCR1B = 0;     // same for TCCR1B
-  TCNT1  = 0; // initialize counter value to 0
-  // set compare match register to desired timer count:
-  OCR1A = ((48000 / PULSE_PER_3MS)-1) / (16/clockCyclesPerMicrosecond());
-  // turn on CTC mode:
-  TCCR1B |= (1 << WGM12);
-  // Set CS10 bit for no prescaler:
-  TCCR1B |= (1 << CS10);
-  // enable timer compare interrupt:
-  TIMSK1 |= (1 << OCIE1A);
-  sei();      // enable global interrupts
+  disableInterrupts();
 }
 
 void HotStepper::pause(){
@@ -80,6 +67,7 @@ void HotStepper::turn(long steps, byte direction, float rate){
   _counterMax = PULSE_PER_3MS / rate;
   counter = _counterMax;
   lastDirection = direction;
+  enableInterrupts();
 }
 
 boolean HotStepper::ready(){
@@ -162,6 +150,41 @@ byte HotStepper::unpad(byte input, byte mask){
 }
 void HotStepper::release(){
   setStep(0);
+  if(firstInstance->checkReady()){
+    disableInterrupts();
+  }
+}
+
+boolean HotStepper::checkReady(){
+  if(nextInstance){
+    return ready() && nextInstance->checkReady();
+  }else{
+    return ready();
+  }
+}
+
+void HotStepper::enableInterrupts(){
+  if(TCCR1A == 0 && TCCR1B == 0){
+    // initialize Timer1 for a 3ms duty cycle
+    cli();        // disable global interrupts
+    TCNT1  = 0;   // initialize counter value to 0
+    // set compare match register to desired timer count:
+    OCR1A = ((48000 / PULSE_PER_3MS)-1) / (16/clockCyclesPerMicrosecond());
+    // turn on CTC mode:
+    TCCR1B |= (1 << WGM12);
+    // Set CS10 bit for no prescaler:
+    TCCR1B |= (1 << CS10);
+    // enable timer compare interrupt:
+    TIMSK1 |= (1 << OCIE1A);
+    sei();        // enable global interrupts
+  }
+}
+
+void HotStepper::disableInterrupts(){
+  cli();        // disable global interrupts
+  TCCR1A = 0;   // set entire TCCR1A register to 0
+  TCCR1B = 0;   // same for TCCR1B
+  sei();        // enable global interrupts
 }
 
 void HotStepper::trigger(){
