@@ -3,10 +3,12 @@
 Mirobot mirobot;
 
 void setup(){
-  mirobot.begin(2);
+  mirobot.begin();
   mirobot.enableSerial();
+  mirobot.enableWifi();
 }
 
 void loop(){
   mirobot.loop();
 }
+

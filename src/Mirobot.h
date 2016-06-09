@@ -38,7 +38,6 @@
 #define STEPS_PER_MM_V2      STEPS_PER_TURN / CIRCUMFERENCE_MM_V2
 #define STEPS_PER_DEGREE_V2  ((WHEEL_DISTANCE_V2 * 3.1416) / 360) * STEPS_PER_MM_V2
 
-#define STATUS_LED 13
 
 #define MIROBOT_SUB_VERSION "1.0"
 
@@ -52,35 +51,37 @@
 #define SERVO_PULSES 15
 
 #ifdef AVR
-#define SERVO_PIN 3
+  #define SERVO_PIN 3
 
-#define SPEAKER_PIN 9
+  #define SPEAKER_PIN 9
 
-#define LEFT_LINE_SENSOR  A0
-#define RIGHT_LINE_SENSOR A1
+  #define STATUS_LED_PIN 13
 
-#define LEFT_COLLIDE_SENSOR  A3
-#define RIGHT_COLLIDE_SENSOR A2
+  #define LEFT_LINE_SENSOR  A0
+  #define RIGHT_LINE_SENSOR A1
+
+  #define LEFT_COLLIDE_SENSOR  A3
+  #define RIGHT_COLLIDE_SENSOR A2
 #endif
 
 #ifdef ESP8266
-#define SERVO_PIN 4
+  #define SERVO_PIN 4
 
-#define SHIFT_REG_DATA  12
-#define SHIFT_REG_CLOCK 13
-#define SHIFT_REG_LATCH 14
+  #define SHIFT_REG_DATA  12
+  #define SHIFT_REG_CLOCK 13
+  #define SHIFT_REG_LATCH 14
 
-#define SPEAKER_PIN 5
+  #define SPEAKER_PIN 5
 
-#define LINE_LED_ENABLE 16
+  #define LINE_LED_ENABLE 16
 
-#define LED_PIN 15
-#define LED_PULSE_TIME 6000.0
-#define LED_COLOUR_NORMAL 0xFFFFFF
+  #define STATUS_LED_PIN 15
+  #define LED_PULSE_TIME 6000.0
+  #define LED_COLOUR_NORMAL 0xFFFFFF
 
-#define PCF8591_ADDRESS B1001000
-#define I2C_DATA  0
-#define I2C_CLOCK 2
+  #define PCF8591_ADDRESS B1001000
+  #define I2C_DATA  0
+  #define I2C_CLOCK 2
 #endif
 
 typedef enum {UP, DOWN} penState_t;
@@ -234,6 +235,7 @@ class Mirobot {
     boolean rightCollide;
     uint8_t leftLineSensor;
     uint8_t rightLineSensor;
+    boolean wifiEnabled;
 };
 
 #endif

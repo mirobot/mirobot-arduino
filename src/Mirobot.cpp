@@ -1,27 +1,26 @@
 #include "Arduino.h"
 #include "Mirobot.h"
 
+CmdProcessor cmdProcessor;
+SerialWebSocket v1ws(Serial);
+
 #ifdef AVR
 HotStepper rightMotor(&PORTB, 0b00011101);
 HotStepper leftMotor(&PORTD, 0b11110000);
-#endif
+#endif //AVR
+
 #ifdef ESP8266
 ShiftStepper rightMotor(0);
 ShiftStepper leftMotor(1);
 
 MirobotWifi wifi;
 
-WS2812B led(LED_PIN);
-#endif
+WS2812B led(STATUS_LED_PIN);
 
-CmdProcessor cmdProcessor;
-SerialWebSocket v1ws(Serial);
-
-#ifdef ESP8266
 void handleWsMsg(char * msg){
   cmdProcessor.processMsg(msg);
 }
-#endif
+#endif //ESP8266
 
 void sendSerialMsg(ArduinoJson::JsonObject &outMsg){
   outMsg.printTo(Serial);
@@ -38,35 +37,43 @@ Mirobot::Mirobot(){
   lastLedChange = millis();
   calibratingSlack = false;
   beepComplete = 0;
+  wifiEnabled = false;
 }
 
 void Mirobot::begin(unsigned char v){
   version(v);
+
+#ifdef AVR
   // Initialise the steppers
-  #ifdef AVR
   HotStepper::begin();
-  #endif
-  #ifdef ESP8266
-  ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
-  #endif
-  // Set up the pen arm servo
-  pinMode(SERVO_PIN, OUTPUT);
-  #ifdef AVR
   // Set up the collision sensor inputs and state
   pinMode(LEFT_COLLIDE_SENSOR, INPUT_PULLUP);
   pinMode(RIGHT_COLLIDE_SENSOR, INPUT_PULLUP);
-  #endif
+  // Set up the status LED
+  pinMode(STATUS_LED_PIN, OUTPUT);
+#endif //AVR
+
+#ifdef ESP8266
+  // Initialise the steppers
+  ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
+  // Set up the I2C lines for the ADC
+  Wire.begin(I2C_DATA, I2C_CLOCK);
+  // Set up the line follower LED enable pin
+  pinMode(LINE_LED_ENABLE, OUTPUT);
+  digitalWrite(LINE_LED_ENABLE, HIGH);
+#endif //ESP8266
+
+  // Set up the pen arm servo
+  pinMode(SERVO_PIN, OUTPUT);
   _collideStatus = NORMAL;
   // Initialise the pen arm into the up position
   setPenState(UP);
   // Pull the settings out of memory
   initSettings();
-  // Set up the status LED
-  pinMode(STATUS_LED, OUTPUT);
 }
 
 void Mirobot::begin(){
-  begin(2);
+  begin(3);
 }
 
 void Mirobot::enableSerial(){
@@ -96,8 +103,9 @@ void Mirobot::enableWifi(){
   wifi.begin(&settings);
   wifi.onMsg(handleWsMsg);
   cmdProcessor.addOutputHandler(wifi.sendWebSocketMsg);
+  wifiEnabled = true;
 }
-#endif
+#endif //ESP8266
 
 void Mirobot::initSettings(){
   if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2 && EEPROM.read(EEPROM_OFFSET + 2) == SETTINGS_VERSION){
@@ -132,7 +140,7 @@ void Mirobot::saveSettings(){
   }
 #ifdef ESP8266
   EEPROM.commit();
-#endif
+#endif //ESP8266
 }
 
 void Mirobot::initCmds(){
@@ -170,7 +178,7 @@ void Mirobot::initCmds(){
   cmdProcessor.addCmd("resetConfig",      &Mirobot::_resetConfig,      true);
   cmdProcessor.addCmd("freeHeap",         &Mirobot::_freeHeap,         true);
   cmdProcessor.addCmd("startWifiScan",    &Mirobot::_startWifiScan,    true);
-#endif
+#endif //ESP8266
 }
 
 void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
@@ -377,7 +385,7 @@ void Mirobot::_freeHeap(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject
 void Mirobot::_startWifiScan(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
   MirobotWifi::startWifiScan();
 }
-#endif
+#endif //ESP8266
 
 void Mirobot::takeUpSlack(byte rightMotorDir, byte leftMotorDir){
   // Take up the slack on each motor
@@ -586,11 +594,11 @@ void Mirobot::ledHandler(){
   long t = millis();
 #ifdef AVR
   digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
-#endif
+#endif //AVR
 #ifdef ESP8266
   uint8_t val = (abs((millis() % (uint32_t)LED_PULSE_TIME) - LED_PULSE_TIME/2) / (LED_PULSE_TIME/2)) * 50;
   led.setRGBA(LED_COLOUR_NORMAL, val);
-#endif
+#endif //ESP8266
 }
 
 void Mirobot::servoHandler(){
@@ -625,13 +633,14 @@ void Mirobot::readSensors(){
   leftLineSensor = analogRead(LEFT_LINE_SENSOR);
   rightLineSensor = analogRead(RIGHT_LINE_SENSOR);
 }
-#endif
+#endif //AVR
 
 #ifdef ESP8266
 void Mirobot::readSensors(){
   uint8_t temp[4];
   if(millis() >= nextADCRead){
     nextADCRead = millis() + 10;
+    digitalWrite(LINE_LED_ENABLE, LOW);
 
     // Fetch the data from the ADC
     Wire.beginTransmission(PCF8591_ADDRESS); // wake up PCF8591
@@ -653,9 +662,10 @@ void Mirobot::readSensors(){
       leftCollide = !!temp[2];
       rightCollide = !!temp[3];
     }
+    digitalWrite(LINE_LED_ENABLE, HIGH);
   }
 }
-#endif
+#endif //ESP8266
 
 void Mirobot::sensorNotifier(){
   StaticJsonBuffer<60> outBuffer;
@@ -729,7 +739,7 @@ void Mirobot::wifiScanNotifier(){
   wifi.getWifiScanData(msg);
   cmdProcessor.notify("wifiScan", outMsg);
 }
-#endif
+#endif //ESP8266
 
 void Mirobot::calibrateSlack(unsigned int amount){
   settings.slackCalibration = amount;
@@ -813,7 +823,10 @@ void Mirobot::loop(){
 #ifdef ESP8266
   networkNotifier();
   wifiScanNotifier();
-#endif
+  if(wifiEnabled){
+    wifi.run();
+  }
+#endif //ESP8266
   serialHandler();
   checkReady();
 }
