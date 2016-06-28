@@ -62,7 +62,7 @@ void Mirobot::begin(unsigned char v){
   pinMode(LINE_LED_ENABLE, OUTPUT);
   digitalWrite(LINE_LED_ENABLE, HIGH);
   // Set up the EEPROM
-  EEPROM.begin(sizeof(settings));
+  EEPROM.begin(sizeof(settings)+2);
 #endif //ESP8266
 
   // Set up the pen arm servo
@@ -117,7 +117,7 @@ void Mirobot::initSettings(){
     }
     // Sanity check the values to make sure they look correct
     if(settings.settingsVersion == SETTINGS_VERSION &&
-       settings.slackCalibration > 50 &&
+       settings.slackCalibration < 50 &&
        settings.moveCalibration > 0.5f &&
        settings.moveCalibration < 1.5f &&
        settings.turnCalibration > 0.5f &&
