@@ -13,8 +13,7 @@ static void ICACHE_FLASH_ATTR discoveryConnectedCb(void *arg) {
   char httpStr[128];
   static uint8_t macaddr[6];
   struct espconn *conn=(struct espconn *)arg;
- 
-  os_sprintf(httpStr, "POST /?address=" IPSTR "&name=%s HTTP/1.1\r\nHost: %s\r\n\r\n", IP2STR(miro_ip), miro_name, DISCOVERY_HOST);
+  os_sprintf(httpStr, "POST /?address=" IPSTR "&name=%s HTTP/1.1\r\nHost: %s\r\n\r\n", (uint8_t)(miro_ip & 0xFF), (uint8_t)((miro_ip >> 8) & 0xFF), (uint8_t)((miro_ip >> 16) & 0xFF), (uint8_t)((miro_ip >> 24) & 0xFF), miro_name, DISCOVERY_HOST);
   espconn_sent(conn, (uint8 *)httpStr, strlen(httpStr));
 }
 
