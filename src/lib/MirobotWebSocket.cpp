@@ -32,8 +32,9 @@ void setWsMsgHandler(dataHandler h){
 }
 
 void sendWsMsg(ArduinoJson::JsonObject &msg){
-  //TODO: Convert JSON to string
-  //ws.broadcastTXT(msg, strlen(msg));
+  char jsonBuff[JSON_BUFFER_LENGTH];
+  msg.printTo(jsonBuff, sizeof(jsonBuff));
+  ws.broadcastTXT(jsonBuff, strlen(jsonBuff));
 }
 
 #endif

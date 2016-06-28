@@ -1,11 +1,5 @@
 #ifdef ESP8266
-#include "Arduino.h"
 #include "discovery.h"
-extern "C" {
-#include "ip_addr.h"
-#include "espconn.h"
-#include "user_interface.h"
-}
 
 static uint32_t miro_ip;
 static char miro_name[33];

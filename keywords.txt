@@ -1,6 +1,7 @@
 Mirobot	KEYWORD1
 begin	KEYWORD2
 enableSerial	KEYWORD2
+enableWifi	KEYWORD2
 forward	KEYWORD2
 back	KEYWORD2
 right	KEYWORD2

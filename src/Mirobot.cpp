@@ -61,6 +61,8 @@ void Mirobot::begin(unsigned char v){
   // Set up the line follower LED enable pin
   pinMode(LINE_LED_ENABLE, OUTPUT);
   digitalWrite(LINE_LED_ENABLE, HIGH);
+  // Set up the EEPROM
+  EEPROM.begin(sizeof(settings));
 #endif //ESP8266
 
   // Set up the pen arm servo
@@ -129,6 +131,19 @@ void Mirobot::initSettings(){
   settings.slackCalibration = 14;
   settings.moveCalibration = 1.0f;
   settings.turnCalibration = 1.0f;
+#ifdef ESP8266
+  settings.sta_ssid[0] = 0;
+  settings.sta_pass[0] = 0;
+  settings.sta_dhcp = true;
+  settings.sta_fixedip = 0;
+  settings.sta_fixedgateway = 0;
+  settings.sta_fixednetmask = (uint32_t)IPAddress(255, 255, 255, 0);
+  settings.sta_fixeddns1 = 0;
+  settings.sta_fixeddns2 = 0;
+  MirobotWifi::defautAPName(settings.ap_ssid);
+  settings.ap_pass[0] = 0;
+  settings.discovery = true;
+#endif //ESP8266
   saveSettings();
 }
 
@@ -593,7 +608,7 @@ void Mirobot::collideHandler(){
 void Mirobot::ledHandler(){
   long t = millis();
 #ifdef AVR
-  digitalWrite(STATUS_LED, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
+  digitalWrite(STATUS_LED_PIN, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
 #endif //AVR
 #ifdef ESP8266
   uint8_t val = (abs((millis() % (uint32_t)LED_PULSE_TIME) - LED_PULSE_TIME/2) / (LED_PULSE_TIME/2)) * 50;

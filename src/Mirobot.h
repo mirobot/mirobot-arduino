@@ -89,20 +89,12 @@ typedef enum {UP, DOWN} penState_t;
 typedef enum {NONE=0, RIGHT, LEFT, BOTH} collideState_t;
 typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideStatus_t;
 
-#ifdef AVR
 struct MirobotSettings {
   uint8_t      settingsVersion;
   unsigned int slackCalibration;
   float        moveCalibration;
   float        turnCalibration;
-};
-#endif
 #ifdef ESP8266
-struct MirobotSettings {
-  uint8_t      settingsVersion;
-  unsigned int slackCalibration;
-  float        moveCalibration;
-  float        turnCalibration;
   char         sta_ssid[32];
   char         sta_pass[64];
   bool         sta_dhcp;
@@ -114,8 +106,8 @@ struct MirobotSettings {
   char         ap_ssid[32];
   char         ap_pass[64];
   bool         discovery;
-};
 #endif
+};
 
 class Mirobot {
   public:

@@ -10,7 +10,12 @@ class CmdProcessor;
 #include "./lib/ArduinoJson/ArduinoJson.h"
 
 #define CMD_COUNT 31
+#ifdef AVR
 #define JSON_BUFFER_LENGTH 128
+#endif //AVR
+#ifdef ESP8266
+#define JSON_BUFFER_LENGTH 512
+#endif //AVR
 #define OUTPUT_HANDLER_COUNT 2
 
 typedef void (Mirobot::*MirobotMemFn)(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);

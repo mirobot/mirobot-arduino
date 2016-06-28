@@ -77,6 +77,9 @@ WiFiMode MirobotWifi::getWifiMode(){
 }
 
 void MirobotWifi::setupWifi(){
+  // Don't let the ESP SDK persist the settings since we do this ourselves
+  WiFi.persistent(false);
+
   // Put the WiFi into AP_STA mode
   WiFi.mode(WIFI_AP_STA);
 
