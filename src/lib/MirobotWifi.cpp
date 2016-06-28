@@ -128,6 +128,7 @@ void MirobotWifi::getWifiScanData(ArduinoJson::JsonArray &msg){
 }
 
 void MirobotWifi::setupDNS(){
+  dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
   dnsServer.start(53, "local.mirobot.io", IPAddress(192, 168, 4, 1));
 }
 
