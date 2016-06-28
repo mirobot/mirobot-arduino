@@ -95,6 +95,9 @@ void Mirobot::enableSerial(){
     Serial.begin(230400);
     Serial.setTimeout(1); 
     cmdProcessor.addOutputHandler(sendSerialMsg);
+    Serial.print("{\"status\":\"notify\",\"id\":\"boot\",\"msg\":\"");
+    Serial.print(versionStr);
+    Serial.println("\"}");
   }
   // Enable serial processing
   serialEnabled = true;
