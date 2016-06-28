@@ -62,6 +62,7 @@ void WebSocketsClient::begin(const char *host, uint16_t port, const char * url, 
     _client.cExtensions = "";
     _client.cVersion = 0;
     _client.base64Authorization = "";
+    _client.plainAuthorization = "";
 
 #ifdef ESP8266
     randomSeed(RANDOM_REG32);
@@ -228,7 +229,8 @@ void WebSocketsClient::setAuthorization(const char * user, const char * password
  */
 void WebSocketsClient::setAuthorization(const char * auth) {
     if(auth) {
-        _client.base64Authorization = auth;
+        //_client.base64Authorization = auth;
+        _client.plainAuthorization = auth;
     }
 }
 
@@ -243,7 +245,7 @@ void WebSocketsClient::setAuthorization(const char * auth) {
  * @param payload  uint8_t *
  * @param lenght size_t
  */
-void WebSocketsClient::messageRecived(WSclient_t * client, WSopcode_t opcode, uint8_t * payload, size_t lenght) {
+void WebSocketsClient::messageReceived(WSclient_t * client, WSopcode_t opcode, uint8_t * payload, size_t lenght) {
     WStype_t type = WStype_ERROR;
 
     switch(opcode) {
@@ -392,15 +394,16 @@ void WebSocketsClient::sendHeader(WSclient_t * client) {
 #endif
 
     String handshake =  "GET " + client->cUrl + " HTTP/1.1\r\n"
-                        "Host: " + _host + "\r\n"
-                        "Upgrade: websocket\r\n"
+                        "Host: " + _host + ":" + _port + "\r\n"
                         "Connection: Upgrade\r\n"
+                        "Upgrade: websocket\r\n"
+                        "Origin: file://\r\n"
                         "User-Agent: arduino-WebSocket-Client\r\n"
                         "Sec-WebSocket-Version: 13\r\n"
                         "Sec-WebSocket-Key: " + client->cKey + "\r\n";
 
     if(client->cProtocol.length() > 0) {
-        handshake += "Sec-WebSocket-Protocol: " + client->cProtocol + "\r\n";
+       handshake += "Sec-WebSocket-Protocol: " + client->cProtocol + "\r\n";
     }
 
     if(client->cExtensions.length() > 0) {
@@ -409,6 +412,10 @@ void WebSocketsClient::sendHeader(WSclient_t * client) {
 
     if(client->base64Authorization.length() > 0) {
         handshake += "Authorization: Basic " + client->base64Authorization + "\r\n";
+    }
+
+    if(client->plainAuthorization.length() > 0) {
+        handshake += "Authorization: " + client->plainAuthorization + "\r\n";
     }
 
     handshake += "\r\n";
@@ -442,7 +449,7 @@ void WebSocketsClient::handleHeader(WSclient_t * client, String * headerLine) {
             String headerValue = headerLine->substring(headerLine->indexOf(':') + 2);
 
             if(headerName.equalsIgnoreCase("Connection")) {
-                if(headerValue.indexOf("Upgrade") >= 0) {
+                if(headerValue.equalsIgnoreCase("upgrade")) {
                     client->cIsUpgrade = true;
                 }
             } else if(headerName.equalsIgnoreCase("Upgrade")) {
@@ -620,6 +627,3 @@ void WebSocketsClient::asyncConnect() {
 }
 
 #endif
-
-
-
