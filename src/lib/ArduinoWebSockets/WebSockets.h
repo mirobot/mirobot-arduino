@@ -54,8 +54,8 @@
 
 // select Network type based
 #if defined(ESP8266) || defined(ESP31B)
-#define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266
-//#define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266_ASYNC
+//#define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266
+#define WEBSOCKETS_NETWORK_TYPE NETWORK_ESP8266_ASYNC
 #else
 #define WEBSOCKETS_NETWORK_TYPE NETWORK_W5100
 #endif
@@ -75,8 +75,8 @@
 #else
 #include <ESP31BWiFi.h>
 #endif
-#include <ESPAsyncTCP.h>
-#include <ESPAsyncTCPbuffer.h>
+#include "../ESPAsyncTCP/ESPAsyncTCP.h"
+#include "../ESPAsyncTCP/ESPAsyncTCPbuffer.h"
 #define WEBSOCKETS_NETWORK_CLASS AsyncTCPbuffer
 #define WEBSOCKETS_NETWORK_SERVER_CLASS AsyncServer
 

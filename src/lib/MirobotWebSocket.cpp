@@ -23,10 +23,6 @@ void beginWebSocket(){
   ws.onEvent(webSocketEvent);
 }
 
-void handleWebSocket(){
-  ws.loop();
-}
-
 void setWsMsgHandler(dataHandler h){
   handler = h;
 }
