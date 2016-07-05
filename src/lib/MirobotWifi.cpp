@@ -46,7 +46,7 @@ void MirobotWifi::begin(MirobotSettings * _settings){
   setupDNS();
 
   // Start the web server
-  webServer = MirobotWeb();
+  new MirobotWeb();
 
   // Start the WebSocket server
   beginWebSocket();
@@ -134,7 +134,6 @@ void MirobotWifi::setupDNS(){
 
 void MirobotWifi::run(){
   if(!enabled) return;
-  webServer.run();
   handleWebSocket();
   dnsServer.processNextRequest();
   if(wifiScanRequested && WiFi.scanComplete() >= 0){
