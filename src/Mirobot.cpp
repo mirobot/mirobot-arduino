@@ -262,15 +262,15 @@ void Mirobot::back(int distance){
 
 void Mirobot::left(int angle){
   takeUpSlack(FORWARD, FORWARD);
-  motor1.turn(angle * steps_per_degree * settings.turnCalibration, FORWARD);
-  motor2.turn(angle * steps_per_degree * settings.turnCalibration, FORWARD);
+  motor1.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, FORWARD);
+  motor2.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, FORWARD);
   wait();
 }
 
 void Mirobot::right(int angle){
   takeUpSlack(BACKWARD, BACKWARD);
-  motor1.turn(angle * steps_per_degree * settings.turnCalibration, BACKWARD);
-  motor2.turn(angle * steps_per_degree * settings.turnCalibration, BACKWARD);
+  motor1.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, BACKWARD);
+  motor2.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, BACKWARD);
   wait();
 }
 
