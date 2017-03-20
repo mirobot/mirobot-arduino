@@ -387,7 +387,9 @@ void Mirobot::collideHandler(){
       _collideStatus = RIGHT_REVERSE;
       back(50);
     }else{
-      forward(10);
+      if(motor1.ready() && motor2.ready()){
+        forward(1000);
+      }
     }
   }else if(motor1.ready() && motor2.ready()){
     switch(_collideStatus){
