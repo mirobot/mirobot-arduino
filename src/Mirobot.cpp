@@ -431,15 +431,15 @@ void Mirobot::back(int distance){
 
 void Mirobot::left(int angle){
   takeUpSlack(FORWARD, FORWARD);
-  rightMotor.turn(angle * steps_per_degree * settings.turnCalibration, FORWARD);
-  leftMotor.turn(angle * steps_per_degree * settings.turnCalibration, FORWARD);
+  rightMotor.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, FORWARD);
+  leftMotor.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, FORWARD);
   wait();
 }
 
 void Mirobot::right(int angle){
   takeUpSlack(BACKWARD, BACKWARD);
-  rightMotor.turn(angle * steps_per_degree * settings.turnCalibration, BACKWARD);
-  leftMotor.turn(angle * steps_per_degree * settings.turnCalibration, BACKWARD);
+  rightMotor.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, BACKWARD);
+  leftMotor.turn(angle * steps_per_degree * settings.moveCalibration * settings.turnCalibration, BACKWARD);
   wait();
 }
 
@@ -587,7 +587,9 @@ void Mirobot::collideHandler(){
       _collideStatus = RIGHT_REVERSE;
       back(50);
     }else{
-      forward(10);
+      if(motor1.ready() && motor2.ready()){
+        forward(1000);
+      }
     }
   }else if(rightMotor.ready() && leftMotor.ready()){
     switch(_collideStatus){
