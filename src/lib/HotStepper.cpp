@@ -64,6 +64,10 @@ void HotStepper::turn(long steps, byte direction){
 }
 
 void HotStepper::turn(long steps, byte direction, float rate){
+  if(steps < 0){
+    steps = -steps;
+    direction = !direction;
+  }
   _remaining = steps;
   _dir = direction;
   _counterMax = PULSE_PER_3MS / rate;

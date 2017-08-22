@@ -121,10 +121,10 @@ void Mirobot::initSettings(){
     // Sanity check the values to make sure they look correct
     if(settings.settingsVersion == SETTINGS_VERSION &&
        settings.slackCalibration < 50 &&
-       settings.moveCalibration > 0.5f &&
-       settings.moveCalibration < 1.5f &&
-       settings.turnCalibration > 0.5f &&
-       settings.turnCalibration < 1.5f){
+       abs(settings.moveCalibration) > 0.5f &&
+       abs(settings.moveCalibration) < 1.5f &&
+       abs(settings.turnCalibration) > 0.5f &&
+       abs(settings.turnCalibration) < 1.5f){
       // The values look OK so let's leave them as they are
       return;
     }
