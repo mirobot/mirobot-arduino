@@ -31,9 +31,6 @@ Mirobot::Mirobot(){
 }
 
 void Mirobot::begin(unsigned char v){
-  
-    Serial.begin(230400);
-  marcel.begin();
   version(v);
   
 #ifdef AVR
@@ -69,6 +66,8 @@ void Mirobot::begin(unsigned char v){
 #endif
   // Pull the settings out of memory
   initSettings();
+  // Start marceau processing commands
+  marcel.begin();
 }
 
 void Mirobot::begin(){
