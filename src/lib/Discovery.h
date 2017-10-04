@@ -1,6 +1,7 @@
 #ifndef __discovery_h__
 #define __discovery_h__
 
+#include "Marceau.h"
 extern "C" {
 #include "lwip/inet.h"
 #include "espconn.h"
@@ -8,6 +9,6 @@ extern "C" {
 
 #define DISCOVERY_HOST "local.mirobot.io"
 
-void send_discovery_request(uint32_t, char *);
+void send_discovery_request(uint32_t, char *, char *);
 
 #endif

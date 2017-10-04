@@ -1,48 +1,47 @@
-#include "Arduino.h"
 #include "Mirobot.h"
 
-CmdProcessor cmdProcessor;
-SerialWebSocket v1ws(Serial);
+Marceau<24> marcel;
+
+Mirobot *Mirobot::mainInstance;
 
 #ifdef AVR
+// Set up the steppers
 HotStepper rightMotor(&PORTB, 0b00011101);
 HotStepper leftMotor(&PORTD, 0b11110000);
 #endif //AVR
 
 #ifdef ESP8266
+// Set up the steppers
 ShiftStepper rightMotor(0);
 ShiftStepper leftMotor(1);
 
-MirobotWifi wifi;
-
+// Set up the LED
 WS2812B led(STATUS_LED_PIN);
 
-void handleWsMsg(char * msg){
-  cmdProcessor.processMsg(msg);
-}
+// Set up the ADC
+PCF8591 adc(I2C_DATA, I2C_CLOCK, PCF8591_ADDRESS);
 #endif //ESP8266
 
-void sendSerialMsg(ArduinoJson::JsonObject &outMsg){
-  outMsg.printTo(Serial);
-  Serial.println();
-}
-
-void sendSerialMsgV1(ArduinoJson::JsonObject &outMsg){
-  v1ws.send(outMsg);
-}
-
 Mirobot::Mirobot(){
+  mainInstance = this;
   blocking = true;
   nextADCRead = 0;
-  lastLedChange = millis();
-  calibratingSlack = false;
   beepComplete = 0;
-  wifiEnabled = false;
+  initCmds();
+}
+
+void Mirobot::generateAPName(char * name){
+  uint8_t mac[6];
+  WiFi.softAPmacAddress(mac);
+  sprintf(name, "Mirobot-%02X%02X", mac[4], mac[5]);
 }
 
 void Mirobot::begin(unsigned char v){
+  
+    Serial.begin(230400);
+  marcel.begin();
   version(v);
-
+  
 #ifdef AVR
   // Initialise the steppers
   HotStepper::begin();
@@ -56,13 +55,11 @@ void Mirobot::begin(unsigned char v){
 #ifdef ESP8266
   // Initialise the steppers
   ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
-  // Set up the I2C lines for the ADC
-  Wire.begin(I2C_DATA, I2C_CLOCK);
-  // Set up the line follower LED enable pin
+  // Set up the line follower LED enable pin and turn it off
   pinMode(LINE_LED_ENABLE, OUTPUT);
   digitalWrite(LINE_LED_ENABLE, HIGH);
   // Set up the EEPROM
-  EEPROM.begin(sizeof(settings)+2);
+  EEPROM.begin(sizeof(MarceauSettings) + sizeof(settings)+4);
 #endif //ESP8266
 
   // Set up the pen arm servo
@@ -70,6 +67,8 @@ void Mirobot::begin(unsigned char v){
   _collideStatus = NORMAL;
   // Initialise the pen arm into the up position
   setPenState(UP);
+  if(serialEnabled) beginSerial();
+  if(wifiEnabled) beginWifi();
   // Pull the settings out of memory
   initSettings();
 }
@@ -79,44 +78,61 @@ void Mirobot::begin(){
 }
 
 void Mirobot::enableSerial(){
-  // Use non-blocking mode to process serial
-  blocking = false;
-  // Set up the commands
-  initCmds();
-  // Set up Serial and add it to be processed
-  // Add the output handler for responses
-  if(hwVersion == 1){
-    Serial.begin(57600);
-    cmdProcessor.addOutputHandler(sendSerialMsgV1);
-  }else if(hwVersion == 2){
-    Serial.begin(57600);
-    cmdProcessor.addOutputHandler(sendSerialMsg);
-  }else if(hwVersion == 3){
-    Serial.begin(230400);
-    Serial.setTimeout(1); 
-    cmdProcessor.addOutputHandler(sendSerialMsg);
-    Serial.print("{\"status\":\"notify\",\"id\":\"boot\",\"msg\":\"");
-    Serial.print(versionStr);
-    Serial.println("\"}");
-  }
   // Enable serial processing
   serialEnabled = true;
 }
 
+void Mirobot::beginSerial(){
+  // Use non-blocking mode to process serial
+  blocking = false;
+  // Set up Serial
+  if(hwVersion == 1){
+    Serial.begin(57600);
+  }else if(hwVersion == 2){
+    Serial.begin(57600);
+  }else if(hwVersion == 3){
+    Serial.begin(230400);
+  }
+  marcel.enableSerial(Serial);
+  //Send out a boot message
+  StaticJsonBuffer<60> outBuffer;
+  JsonObject& outMsg = outBuffer.createObject();
+  outMsg["msg"] = versionStr;
+  marcel.notify("boot", outMsg);
+}
+
 #ifdef ESP8266
 void Mirobot::enableWifi(){
-  wifi.begin(&settings);
-  wifi.onMsg(handleWsMsg);
-  cmdProcessor.addOutputHandler(wifi.sendWebSocketMsg);
+  // Enable WiFi
   wifiEnabled = true;
+}
+
+void Mirobot::beginWifi(){
+  static char defaultAPName[11];
+  generateAPName(defaultAPName);
+  marcel.setDefaultAPName(defaultAPName);
+  marcel.setHostname("local.mirobot.io");
+  marcel.enableWifi();
+}
+
+void Mirobot::sendDiscovery(){
+  if(nextDiscovery < millis()){
+    if(marcel.wifi.online){
+      //send_discovery_request((uint32_t)WiFi.localIP(), marcel.settings.ap_ssid, "Mirobot V3");
+      nextDiscovery = millis() + 30000;
+    }else{
+      nextDiscovery = millis() + 1000;
+    }
+  }
 }
 #endif //ESP8266
 
 void Mirobot::initSettings(){
-  if(EEPROM.read(EEPROM_OFFSET) == MAGIC_BYTE_1 && EEPROM.read(EEPROM_OFFSET + 1) == MAGIC_BYTE_2 && EEPROM.read(EEPROM_OFFSET + 2) == SETTINGS_VERSION){
+  uint16_t eepromOffset = sizeof(MarceauSettings) + 2;
+  if(EEPROM.read(eepromOffset) == MAGIC_BYTE_1 && EEPROM.read(eepromOffset + 1) == MAGIC_BYTE_2 && EEPROM.read(eepromOffset + 2) == SETTINGS_VERSION){
     // We've previously written something valid to the EEPROM
     for (unsigned int t=0; t<sizeof(settings); t++){
-      *((char*)&settings + t) = EEPROM.read(EEPROM_OFFSET + 2 + t);
+      *((char*)&settings + t) = EEPROM.read(eepromOffset + 2 + t);
     }
     // Sanity check the values to make sure they look correct
     if(settings.settingsVersion == SETTINGS_VERSION &&
@@ -135,26 +151,17 @@ void Mirobot::initSettings(){
   settings.moveCalibration = 1.0f;
   settings.turnCalibration = 1.0f;
 #ifdef ESP8266
-  settings.sta_ssid[0] = 0;
-  settings.sta_pass[0] = 0;
-  settings.sta_dhcp = true;
-  settings.sta_fixedip = 0;
-  settings.sta_fixedgateway = 0;
-  settings.sta_fixednetmask = (uint32_t)IPAddress(255, 255, 255, 0);
-  settings.sta_fixeddns1 = 0;
-  settings.sta_fixeddns2 = 0;
-  MirobotWifi::defautAPName(settings.ap_ssid);
-  settings.ap_pass[0] = 0;
   settings.discovery = true;
 #endif //ESP8266
   saveSettings();
 }
 
 void Mirobot::saveSettings(){
-  EEPROM.write(EEPROM_OFFSET, MAGIC_BYTE_1);
-  EEPROM.write(EEPROM_OFFSET + 1, MAGIC_BYTE_2);
+  uint16_t eepromOffset = sizeof(MarceauSettings) + 2;
+  EEPROM.write(eepromOffset, MAGIC_BYTE_1);
+  EEPROM.write(eepromOffset + 1, MAGIC_BYTE_2);
   for (unsigned int t=0; t<sizeof(settings); t++){
-    EEPROM.write(EEPROM_OFFSET + 2 + t, *((char*)&settings + t));
+    EEPROM.write(eepromOffset + 2 + t, *((char*)&settings + t));
   }
 #ifdef ESP8266
   EEPROM.commit();
@@ -162,248 +169,32 @@ void Mirobot::saveSettings(){
 }
 
 void Mirobot::initCmds(){
-  cmdProcessor.setMirobot(self());
-  //             Command name        Handler function             // Returns immediately
-  cmdProcessor.addCmd("version",          &Mirobot::_version,          true);
-  cmdProcessor.addCmd("ping",             &Mirobot::_ping,             true);
-  cmdProcessor.addCmd("uptime",           &Mirobot::_uptime,           true);
-  cmdProcessor.addCmd("pause",            &Mirobot::_pause,            true);
-  cmdProcessor.addCmd("resume",           &Mirobot::_resume,           true);
-  cmdProcessor.addCmd("stop",             &Mirobot::_stop,             true);
-  cmdProcessor.addCmd("collideState",     &Mirobot::_collideState,     true);
-  cmdProcessor.addCmd("collideNotify",    &Mirobot::_collideNotify,    true);
-  cmdProcessor.addCmd("followState",      &Mirobot::_followState,      true);
-  cmdProcessor.addCmd("followNotify",     &Mirobot::_followNotify,     true);
-  cmdProcessor.addCmd("slackCalibration", &Mirobot::_slackCalibration, true);
-  cmdProcessor.addCmd("moveCalibration",  &Mirobot::_moveCalibration,  true);
-  cmdProcessor.addCmd("turnCalibration",  &Mirobot::_turnCalibration,  true);
-  cmdProcessor.addCmd("calibrateMove",    &Mirobot::_calibrateMove,    true);
-  cmdProcessor.addCmd("calibrateTurn",    &Mirobot::_calibrateTurn,    true);
-  cmdProcessor.addCmd("forward",          &Mirobot::_forward,          false);
-  cmdProcessor.addCmd("back",             &Mirobot::_back,             false);
-  cmdProcessor.addCmd("right",            &Mirobot::_right,            false);
-  cmdProcessor.addCmd("left",             &Mirobot::_left,             false);
-  cmdProcessor.addCmd("penup",            &Mirobot::_penup,            false);
-  cmdProcessor.addCmd("pendown",          &Mirobot::_pendown,          false);
-  cmdProcessor.addCmd("follow",           &Mirobot::_follow,           false);
-  cmdProcessor.addCmd("collide",          &Mirobot::_collide,          false);
-  cmdProcessor.addCmd("beep",             &Mirobot::_beep,             false);
-  cmdProcessor.addCmd("calibrateSlack",   &Mirobot::_calibrateSlack,   false);
-  cmdProcessor.addCmd("arc",              &Mirobot::_arc,              false);
-#ifdef ESP8266
-  cmdProcessor.addCmd("getConfig",        &Mirobot::_getConfig,        true);
-  cmdProcessor.addCmd("setConfig",        &Mirobot::_setConfig,        true);
-  cmdProcessor.addCmd("resetConfig",      &Mirobot::_resetConfig,      true);
-  cmdProcessor.addCmd("freeHeap",         &Mirobot::_freeHeap,         true);
-  cmdProcessor.addCmd("startWifiScan",    &Mirobot::_startWifiScan,    true);
-#endif //ESP8266
+  //                  Command name        Handler function   Returns immediately?
+  marcel.addCmd("version",          _version,          true);
+  marcel.addCmd("pause",            _pause,            true);
+  marcel.addCmd("resume",           _resume,           true);
+  marcel.addCmd("stop",             _stop,             true);
+  marcel.addCmd("collideState",     _collideState,     true);
+  marcel.addCmd("collideNotify",    _collideNotify,    true);
+  marcel.addCmd("followState",      _followState,      true);
+  marcel.addCmd("followNotify",     _followNotify,     true);
+  marcel.addCmd("slackCalibration", _slackCalibration, true);
+  marcel.addCmd("moveCalibration",  _moveCalibration,  true);
+  marcel.addCmd("turnCalibration",  _turnCalibration,  true);
+  marcel.addCmd("calibrateMove",    _calibrateMove,    true);
+  marcel.addCmd("calibrateTurn",    _calibrateTurn,    true);
+  marcel.addCmd("forward",          _forward,          false);
+  marcel.addCmd("back",             _back,             false);
+  marcel.addCmd("right",            _right,            false);
+  marcel.addCmd("left",             _left,             false);
+  marcel.addCmd("penup",            _penup,            false);
+  marcel.addCmd("pendown",          _pendown,          false);
+  marcel.addCmd("follow",           _follow,           false);
+  marcel.addCmd("collide",          _collide,          false);
+  marcel.addCmd("beep",             _beep,             false);
+  marcel.addCmd("calibrateSlack",   _calibrateSlack,   false);
+  marcel.addCmd("arc",              _arc,              false);
 }
-
-void Mirobot::_version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = versionStr;
-}
-
-void Mirobot::_ping(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){}
-
-void Mirobot::_uptime(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = millis();
-}
-
-void Mirobot::_pause(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  pause();
-}
-
-void Mirobot::_resume(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  resume();
-}
-
-void Mirobot::_stop(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  stop();
-}
-
-void Mirobot::_collideState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  switch(collideState()){
-    case NONE:
-      outJson["msg"] = "none";
-      break;
-    case LEFT:
-      outJson["msg"] = "left";
-      break;
-    case RIGHT:
-      outJson["msg"] = "right";
-      break;
-    case BOTH:
-      outJson["msg"] = "both";
-      break;
-  }
-}
-
-void Mirobot::_collideNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  collideNotify = !!strcmp(inJson["arg"], "false");
-}
-
-void Mirobot::_followState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = followState();
-}
-
-void Mirobot::_followNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  followNotify = !!strcmp(inJson["arg"].asString(), "false");
-}
-
-void Mirobot::_slackCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = settings.slackCalibration;
-}
-
-void Mirobot::_moveCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = settings.moveCalibration;
-}
-
-void Mirobot::_turnCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = settings.turnCalibration;
-}
-
-void Mirobot::_calibrateMove(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  calibrateMove(atof(inJson["arg"].asString()));
-}
-
-void Mirobot::_calibrateTurn(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  calibrateTurn(atof(inJson["arg"].asString()));
-}
-
-void Mirobot::_forward(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  forward(atoi(inJson["arg"].asString()));
-}
-
-void Mirobot::_back(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  back(atoi(inJson["arg"].asString()));
-}
-
-void Mirobot::_right(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  right(atoi(inJson["arg"].asString()));
-}
-
-void Mirobot::_left(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  left(atoi(inJson["arg"].asString()));
-}
-
-void Mirobot::_penup(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  penup();
-}
-
-void Mirobot::_pendown(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  pendown();
-}
-
-void Mirobot::_follow(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  follow();
-}
-
-void Mirobot::_collide(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  collide();
-}
-
-void Mirobot::_beep(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  beep(atoi(inJson["arg"].asString()));
-}
-
-void Mirobot::_calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  calibrateSlack(atoi(inJson["arg"].asString()));
-}
-
-void Mirobot::_arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  if(inJson["arg"].is<JsonArray&>() && inJson["arg"].size() == 2){
-    arc(inJson["arg"][0].as<float>(), inJson["arg"][1].as<float>());
-  }
-}
-
-#ifdef ESP8266
-void Mirobot::_getConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  JsonObject& msg = outJson.createNestedObject("msg");
-  const char *modes[] = {"OFF","STA","AP","APSTA"};
-  msg["sta_ssid"] = settings.sta_ssid;
-  msg["sta_dhcp"] = settings.sta_dhcp;
-  msg["sta_rssi"] = MirobotWifi::getStaRSSI();
-  if(!settings.sta_dhcp){
-    msg["sta_fixedip"] = IPAddress(settings.sta_fixedip).toString();
-    msg["sta_fixedgateway"] = IPAddress(settings.sta_fixedgateway).toString();
-    msg["sta_fixednetmask"] = IPAddress(settings.sta_fixednetmask).toString();
-  }
-  msg["sta_ip"] = MirobotWifi::getStaIp().toString();
-  msg["ap_ssid"] = settings.ap_ssid;
-  msg["ap_encrypted"] = !!strlen(settings.ap_pass);
-  msg["discovery"] = settings.discovery;
-  msg["wifi_mode"] = modes[MirobotWifi::getWifiMode()];
-}
-
-void Mirobot::_setConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  IPAddress addr;
-  if(!(inJson.containsKey("arg") && inJson["arg"].is<JsonObject&>())) return;
-
-  // Set the SSID to connect to
-  if(inJson["arg"].asObject().containsKey("sta_ssid")){
-    strcpy(settings.sta_ssid, inJson["arg"]["sta_ssid"]);
-  }
-  // Set the password for the SSID
-  if(inJson["arg"].asObject().containsKey("sta_pass")){
-    strcpy(settings.sta_pass, inJson["arg"]["sta_pass"]);
-  }
-  // Change the name of the built in access point
-  if(inJson["arg"].asObject().containsKey("ap_ssid")){
-    strcpy(settings.ap_ssid, inJson["arg"]["ap_ssid"]);
-  }
-  // Set the password for the access point
-  if(inJson["arg"].asObject().containsKey("ap_pass")){
-    strcpy(settings.ap_pass, inJson["arg"]["ap_pass"]);
-  }
-  // Set whether to use DHCP
-  if(inJson["arg"].asObject().containsKey("sta_dhcp")){
-    settings.sta_dhcp = inJson["arg"]["sta_dhcp"];
-  }
-  // Use a fixed IP address
-  if(inJson["arg"].asObject().containsKey("sta_fixedip")){
-    addr.fromString(inJson["arg"]["sta_fixedip"].asString());
-    settings.sta_fixedip = addr;
-  }
-  // The DNS server to use for the fixed IP
-  if(inJson["arg"].asObject().containsKey("sta_fixedgateway")){
-    addr.fromString(inJson["arg"]["sta_fixedgateway"].asString());
-    settings.sta_fixedgateway = addr;
-  }
-  // The netmask to use for the fixed IP
-  if(inJson["arg"].asObject().containsKey("sta_fixednetmask")){
-    addr.fromString(inJson["arg"]["sta_fixednetmask"].asString());
-    settings.sta_fixednetmask = addr;
-  }
-  // The netmask to use for the fixed IP
-  if(inJson["arg"].asObject().containsKey("sta_fixeddns1")){
-    addr.fromString(inJson["arg"]["sta_fixeddns1"].asString());
-    settings.sta_fixeddns1 = addr;
-  }
-  // The netmask to use for the fixed IP
-  if(inJson["arg"].asObject().containsKey("sta_fixeddns2")){
-    addr.fromString(inJson["arg"]["sta_fixeddns2"].asString());
-    settings.sta_fixeddns2 = addr;
-  }
-  // The netmask to use for the fixed IP
-  if(inJson["arg"].asObject().containsKey("discovery")){
-    settings.discovery = inJson["arg"]["discovery"];
-  }
-  wifi.setupWifi();
-  saveSettings();
-}
-void Mirobot::_resetConfig(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  settings.settingsVersion = 0;
-  saveSettings();
-  initSettings();
-  wifi.setupWifi();
-}
-void Mirobot::_freeHeap(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  outJson["msg"] = ESP.getFreeHeap();
-}
-void Mirobot::_startWifiScan(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  MirobotWifi::startWifiScan();
-}
-#endif //ESP8266
 
 void Mirobot::takeUpSlack(byte rightMotorDir, byte leftMotorDir){
   // Take up the slack on each motor
@@ -587,7 +378,7 @@ void Mirobot::collideHandler(){
       _collideStatus = RIGHT_REVERSE;
       back(50);
     }else{
-      if(motor1.ready() && motor2.ready()){
+      if(rightMotor.ready() && leftMotor.ready()){
         forward(1000);
       }
     }
@@ -663,16 +454,7 @@ void Mirobot::readSensors(){
     digitalWrite(LINE_LED_ENABLE, LOW);
 
     // Fetch the data from the ADC
-    Wire.beginTransmission(PCF8591_ADDRESS); // wake up PCF8591
-    Wire.write(0x04); // control byte - read ADC0 and increment counter
-    Wire.endTransmission();
-    Wire.requestFrom(PCF8591_ADDRESS, 6);
-    Wire.read(); // Padding bytes to allow conversion to complete
-    Wire.read(); // Padding bytes to allow conversion to complete
-    temp[0] = Wire.read();
-    temp[1] = Wire.read();
-    temp[2] = Wire.read();
-    temp[3] = Wire.read();
+    adc.readSensors(temp);
 
     // Sanity check to make sure I2C data hasn't gone out of sync
     if((temp[2] == 0 || temp[2] == 255) && (temp[3] == 0 || temp[3] == 255)){
@@ -697,15 +479,15 @@ void Mirobot::sensorNotifier(){
       switch(currentCollideState){
         case BOTH:
           outMsg["msg"] = "both";
-          cmdProcessor.notify("collide", outMsg);
+          marcel.notify("collide", outMsg);
           break;
         case LEFT:
           outMsg["msg"] = "left";
-          cmdProcessor.notify("collide", outMsg);
+          marcel.notify("collide", outMsg);
           break;
         case RIGHT:
           outMsg["msg"] = "right";
-          cmdProcessor.notify("collide", outMsg);
+          marcel.notify("collide", outMsg);
           break;
       }
     }
@@ -715,7 +497,7 @@ void Mirobot::sensorNotifier(){
     int currentFollowState = leftLineSensor - rightLineSensor;
     if(currentFollowState != lastFollowState){
       outMsg["msg"] = currentFollowState;
-      cmdProcessor.notify("follow", outMsg);
+      marcel.notify("follow", outMsg);
     }
     lastFollowState = currentFollowState;
   }
@@ -739,27 +521,6 @@ void Mirobot::version(char v){
     wheel_distance = WHEEL_DISTANCE_V2;
   }
 }
-
-#ifdef ESP8266
-void Mirobot::networkNotifier(){
-  if(!MirobotWifi::networkChanged) return;
-  StaticJsonBuffer<500> outBuffer;
-  JsonObject& outMsg = outBuffer.createObject();
-  MirobotWifi::networkChanged = false;
-  _getConfig(outMsg, outMsg);
-  cmdProcessor.notify("network", outMsg);
-}
-
-void Mirobot::wifiScanNotifier(){
-  if(!MirobotWifi::wifiScanReady) return;
-  StaticJsonBuffer<1000> outBuffer;
-  JsonObject& outMsg = outBuffer.createObject();
-  JsonArray& msg = outMsg.createNestedArray("msg");
-  MirobotWifi::wifiScanReady = false;
-  wifi.getWifiScanData(msg);
-  cmdProcessor.notify("wifiScan", outMsg);
-}
-#endif //ESP8266
 
 void Mirobot::calibrateSlack(unsigned int amount){
   settings.slackCalibration = amount;
@@ -785,68 +546,138 @@ void Mirobot::calibrateHandler(){
   }
 }
 
-void Mirobot::serialHandler(){
-  int s;
-  if(!serialEnabled) return;
-  // process incoming data
-  s = Serial.available();
-  if (s > 0){
-    for(int i = 0; i<s; i++){
-      last_char = millis();
-      char incomingByte = Serial.read();
-      if(hwVersion == 1){
-        // Handle the WebSocket parsing over serial for v1
-        serial_buffer[serial_buffer_pos++] = incomingByte;
-        if(serial_buffer_pos == SERIAL_BUFFER_LENGTH) serial_buffer_pos = 0;
-        processState_t res = v1ws.process(serial_buffer, serial_buffer_pos);
-        // Handle as a stream of commands
-        if(res == SERWS_FRAME_PROCESSED){
-          // It's been successfully processed as a line
-          cmdProcessor.processMsg(serial_buffer);
-          serial_buffer_pos = 0;
-        }else if(res == SERWS_HEADERS_PROCESSED || res == SERWS_FRAME_ERROR || res == SERWS_FRAME_EMPTY){
-          serial_buffer_pos = 0;
-        }
-      }else{
-        // Handle as a stream of commands
-        if((incomingByte == '\r' || incomingByte == '\n') && serial_buffer_pos && cmdProcessor.processMsg(serial_buffer)){
-          // It's been successfully processed as a line
-          serial_buffer_pos = 0;
-        }else{
-          // Not a line to process so store for processing
-          serial_buffer[serial_buffer_pos++] = incomingByte;
-          if(serial_buffer_pos == SERIAL_BUFFER_LENGTH) serial_buffer_pos = 0;
-          serial_buffer[serial_buffer_pos] = 0;
-        }
-      }
-    }
-  }else{
-    //reset the input buffer if nothing is received for 1/2 second to avoid things getting messed up
-    if(millis() - last_char >= 500){
-      serial_buffer_pos = 0;
-    }
-  }
-}
-
 void Mirobot::checkReady(){
-  if(cmdProcessor.in_process && ready()){
-    cmdProcessor.sendComplete();
+  if(ready()){
+    marcel.cmdComplete();
   }
 }
 
 void Mirobot::loop(){
+  marcel.loop();
   ledHandler();
   servoHandler();
   autoHandler();
   calibrateHandler();
   sensorNotifier();
 #ifdef ESP8266
-  networkNotifier();
-  wifiScanNotifier();
-  if(wifiEnabled){
-    wifi.run();
-  }
-#endif //ESP8266
-  serialHandler();
+  if(wifiEnabled) sendDiscovery();
+#endif
   checkReady();
+}
+
+/*******************************************************
+/*
+/* Function callback handlers
+/*
+*******************************************************/
+
+static void _version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = Mirobot::mainInstance->versionStr;
+}
+
+static void _pause(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->pause();
+}
+
+static void _resume(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->resume();
+}
+
+static void _stop(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->stop();
+}
+
+static void _collideState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  switch(Mirobot::mainInstance->collideState()){
+    case NONE:
+      outJson["msg"] = "none";
+      break;
+    case LEFT:
+      outJson["msg"] = "left";
+      break;
+    case RIGHT:
+      outJson["msg"] = "right";
+      break;
+    case BOTH:
+      outJson["msg"] = "both";
+      break;
+  }
+}
+
+static void _collideNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->collideNotify = !!strcmp(inJson["arg"], "false");
+}
+
+static void _followState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = Mirobot::mainInstance->followState();
+}
+
+static void _followNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->followNotify = !!strcmp(inJson["arg"].asString(), "false");
+}
+
+static void _slackCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = Mirobot::mainInstance->settings.slackCalibration;
+}
+
+static void _moveCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = Mirobot::mainInstance->settings.moveCalibration;
+}
+
+static void _turnCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  outJson["msg"] = Mirobot::mainInstance->settings.turnCalibration;
+}
+
+static void _calibrateMove(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->calibrateMove(atof(inJson["arg"].asString()));
+}
+
+static void _calibrateTurn(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->calibrateTurn(atof(inJson["arg"].asString()));
+}
+
+static void _forward(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->forward(atoi(inJson["arg"].asString()));
+}
+
+static void _back(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->back(atoi(inJson["arg"].asString()));
+}
+
+static void _right(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->right(atoi(inJson["arg"].asString()));
+}
+
+static void _left(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->left(atoi(inJson["arg"].asString()));
+}
+
+static void _penup(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->penup();
+}
+
+static void _pendown(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->pendown();
+}
+
+static void _follow(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->follow();
+}
+
+static void _collide(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->collide();
+}
+
+static void _beep(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->beep(atoi(inJson["arg"].asString()));
+}
+
+static void _calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->calibrateSlack(atoi(inJson["arg"].asString()));
+}
+
+static void _arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  if(inJson["arg"].is<JsonArray&>() && inJson["arg"].size() == 2){
+    Mirobot::mainInstance->arc(inJson["arg"][0].as<float>(), inJson["arg"][1].as<float>());
+  }
 }

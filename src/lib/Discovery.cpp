@@ -1,8 +1,9 @@
 #ifdef ESP8266
 #include "discovery.h"
 
-static uint32_t miro_ip;
-static char miro_name[33];
+static uint32_t device_ip;
+static char device_name[33];
+static char device_type[20];
 
 static void ICACHE_FLASH_ATTR discoveryReconCb(void *arg, int8_t err) {}
 static void ICACHE_FLASH_ATTR discoveryDisconCb(void *arg) {}
@@ -13,7 +14,7 @@ static void ICACHE_FLASH_ATTR discoveryConnectedCb(void *arg) {
   char httpStr[128];
   static uint8_t macaddr[6];
   struct espconn *conn=(struct espconn *)arg;
-  os_sprintf(httpStr, "POST /?address=" IPSTR "&name=%s HTTP/1.1\r\nHost: %s\r\n\r\n", (uint8_t)(miro_ip & 0xFF), (uint8_t)((miro_ip >> 8) & 0xFF), (uint8_t)((miro_ip >> 16) & 0xFF), (uint8_t)((miro_ip >> 24) & 0xFF), miro_name, DISCOVERY_HOST);
+  os_sprintf(httpStr, "POST /?address=" IPSTR "&name=%s&type=%s HTTP/1.1\r\nHost: %s\r\n\r\n", (uint8_t)(device_ip & 0xFF), (uint8_t)((device_ip >> 8) & 0xFF), (uint8_t)((device_ip >> 16) & 0xFF), (uint8_t)((device_ip >> 24) & 0xFF), device_name, device_type, DISCOVERY_HOST);
   espconn_sent(conn, (uint8 *)httpStr, strlen(httpStr));
 }
 
@@ -43,11 +44,12 @@ static void ICACHE_FLASH_ATTR DNSFoundCb(const char *name, ip_addr_t *ip, void *
   espconn_connect(conn);
 }
 
-void send_discovery_request(uint32_t _ip, char * _name){
+void send_discovery_request(uint32_t _ip, char * _name, char * _type){
   static struct espconn conn;
   static ip_addr_t ip;
-  miro_ip = _ip;
-  strcpy(miro_name, _name);
+  device_ip = _ip;
+  strcpy(device_name, _name);
+  strcpy(device_type, _type);
   os_printf("Fetching DNS\n");
   espconn_gethostbyname(&conn, "local.mirobot.io", &ip, DNSFoundCb);
 }

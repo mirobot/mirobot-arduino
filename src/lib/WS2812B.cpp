@@ -33,7 +33,7 @@ void WS2812B::send0(uint8_t p) {
 
 void WS2812B::send1(uint8_t p) {
   uint8_t i;
-  i = 8; while (i--) GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, 1 << p);
+  i = 9; while (i--) GPIO_REG_WRITE(GPIO_OUT_W1TS_ADDRESS, 1 << p);
   i = 6; while (i--) GPIO_REG_WRITE(GPIO_OUT_W1TC_ADDRESS, 1 << p);
 }
 #endif

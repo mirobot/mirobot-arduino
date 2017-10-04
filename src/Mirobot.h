@@ -2,19 +2,17 @@
 #define Mirobot_h
 
 #include "Arduino.h"
-#include "lib/CmdProcessor.h"
-#include "lib/SerialWebSocket.h"
-#include "lib/ArduinoJson/ArduinoJson.h"
+#include <Marceau.h>
 #include <EEPROM.h>
 
 #ifdef AVR
 #include "lib/HotStepper.h"
 #endif
+
 #ifdef ESP8266
-#include "Wire.h"
 #include "lib/ShiftStepper.h"
-#include "lib/MirobotWifi.h"
-#include "lib/MirobotWebSocket.h"
+#include "lib/pcf8591.h"
+#include "lib/Discovery.h"
 #include "lib/WS2812B.h"
 #endif
 
@@ -85,7 +83,6 @@
 #endif
 
 typedef enum {UP, DOWN} penState_t;
-
 typedef enum {NONE=0, RIGHT, LEFT, BOTH} collideState_t;
 typedef enum {NORMAL, RIGHT_REVERSE, RIGHT_TURN, LEFT_REVERSE, LEFT_TURN} collideStatus_t;
 
@@ -95,19 +92,34 @@ struct MirobotSettings {
   float        moveCalibration;
   float        turnCalibration;
 #ifdef ESP8266
-  char         sta_ssid[32];
-  char         sta_pass[64];
-  bool         sta_dhcp;
-  uint32_t     sta_fixedip;
-  uint32_t     sta_fixedgateway;
-  uint32_t     sta_fixednetmask;
-  uint32_t     sta_fixeddns1;
-  uint32_t     sta_fixeddns2;
-  char         ap_ssid[32];
-  char         ap_pass[64];
   bool         discovery;
 #endif
 };
+
+static void _version(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _pause(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _resume(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _stop(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _collideState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _collideNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _followState(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _followNotify(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _slackCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _moveCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _turnCalibration(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _calibrateMove(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _calibrateTurn(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _forward(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _back(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _right(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _left(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _penup(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _pendown(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _follow(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _collide(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _beep(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
 
 class Mirobot {
   public:
@@ -115,9 +127,6 @@ class Mirobot {
     void begin();
     void begin(unsigned char);
     void enableSerial();
-#ifdef ESP8266
-    void enableWifi();
-#endif
     void forward(int distance);
     void back(int distance);
     void right(int angle);
@@ -138,6 +147,11 @@ class Mirobot {
     void calibrateSlack(unsigned int);
     void calibrateMove(float);
     void calibrateTurn(float);
+    static Mirobot getMeArmInstance();
+#ifdef ESP8266
+    void enableWifi();
+#endif
+    static Mirobot * mainInstance;
     char hwVersion;
     char versionStr[9];
     MirobotSettings settings;
@@ -152,10 +166,6 @@ class Mirobot {
     void servoHandler();
     void autoHandler();
     void readSensors();
-#ifdef ESP8266
-    void networkNotifier();
-    void wifiScanNotifier();
-#endif
     void sensorNotifier();
     void checkState();
     void initSettings();
@@ -163,39 +173,10 @@ class Mirobot {
     void checkReady();
     void version(char);
     void initCmds();
-    void serialHandler();
-    void _version(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _ping(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _uptime(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _pause(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _resume(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _stop(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _collideState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _collideNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _followState(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _followNotify(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _slackCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _moveCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _turnCalibration(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _calibrateMove(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _calibrateTurn(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _forward(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _back(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _right(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _left(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _penup(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _pendown(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _follow(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _collide(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _beep(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _calibrateSlack(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _arc(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void beginSerial();
 #ifdef ESP8266
-    void _getConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _setConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _resetConfig(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _freeHeap(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
-    void _startWifiScan(ArduinoJson::JsonObject &, ArduinoJson::JsonObject &);
+    void beginWifi();
+    void sendDiscovery();
 #endif
     char lastCollideState;
     int lastFollowState;
@@ -206,6 +187,7 @@ class Mirobot {
     void setPenState(penState_t);
     void takeUpSlack(byte, byte);
     void calibrateHandler();
+    void generateAPName(char * name);
     unsigned long next_servo_pulse;
     unsigned char servo_pulses_left;
     boolean paused;
@@ -217,7 +199,7 @@ class Mirobot {
     int pendown_delay;
     int wheel_distance;
     long beepComplete;
-    boolean calibratingSlack;
+    boolean calibratingSlack = false;
     long nextADCRead;
     bool serialEnabled = false;
     unsigned long last_char;
@@ -227,7 +209,8 @@ class Mirobot {
     boolean rightCollide;
     uint8_t leftLineSensor;
     uint8_t rightLineSensor;
-    boolean wifiEnabled;
+    boolean wifiEnabled = false;
+    long nextDiscovery = 0;
 };
 
 #endif
