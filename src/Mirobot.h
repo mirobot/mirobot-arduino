@@ -78,8 +78,8 @@
   #define LED_COLOUR_NORMAL 0xFFFFFF
 
   #define PCF8591_ADDRESS B1001000
-  #define I2C_DATA  0
-  #define I2C_CLOCK 2
+  #define I2C_DATA  0u
+  #define I2C_CLOCK 2u
 #endif
 
 typedef enum {UP, DOWN} penState_t;
