@@ -30,12 +30,6 @@ Mirobot::Mirobot(){
   initCmds();
 }
 
-void Mirobot::generateAPName(char * name){
-  uint8_t mac[6];
-  WiFi.softAPmacAddress(mac);
-  sprintf(name, "Mirobot-%02X%02X", mac[4], mac[5]);
-}
-
 void Mirobot::begin(unsigned char v){
   
     Serial.begin(230400);
@@ -67,8 +61,12 @@ void Mirobot::begin(unsigned char v){
   _collideStatus = NORMAL;
   // Initialise the pen arm into the up position
   setPenState(UP);
+  // Start the serial
   if(serialEnabled) beginSerial();
+  // Start the WiFi
+#ifdef ESP8266
   if(wifiEnabled) beginWifi();
+#endif
   // Pull the settings out of memory
   initSettings();
 }
@@ -102,6 +100,12 @@ void Mirobot::beginSerial(){
 }
 
 #ifdef ESP8266
+void Mirobot::generateAPName(char * name){
+  uint8_t mac[6];
+  WiFi.softAPmacAddress(mac);
+  sprintf(name, "Mirobot-%02X%02X", mac[4], mac[5]);
+}
+
 void Mirobot::enableWifi(){
   // Enable WiFi
   wifiEnabled = true;

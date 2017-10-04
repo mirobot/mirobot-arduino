@@ -175,6 +175,7 @@ class Mirobot {
     void initCmds();
     void beginSerial();
 #ifdef ESP8266
+    void generateAPName(char * name);
     void beginWifi();
     void sendDiscovery();
 #endif
@@ -187,7 +188,6 @@ class Mirobot {
     void setPenState(penState_t);
     void takeUpSlack(byte, byte);
     void calibrateHandler();
-    void generateAPName(char * name);
     unsigned long next_servo_pulse;
     unsigned char servo_pulses_left;
     boolean paused;

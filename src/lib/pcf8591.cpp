@@ -1,5 +1,6 @@
 #include "pcf8591.h"
 
+#ifdef ESP8266
 PCF8591::PCF8591(int data, int clock, unsigned char addr){
   Wire.begin(data, clock);
   address = addr;
@@ -17,3 +18,4 @@ void PCF8591::readSensors(unsigned char * values){
   values[2] = Wire.read();
   values[3] = Wire.read();
 }
+#endif
