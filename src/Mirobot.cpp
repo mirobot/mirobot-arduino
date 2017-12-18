@@ -14,9 +14,6 @@ HotStepper leftMotor(&PORTD, 0b11110000);
 // Set up the steppers
 ShiftStepper rightMotor(0);
 ShiftStepper leftMotor(1);
-
-// Set up the LED
-WS2812B led(STATUS_LED_PIN);
 #endif //ESP8266
 
 Mirobot::Mirobot(){
@@ -41,6 +38,8 @@ void Mirobot::begin(unsigned char v){
 #endif //AVR
 
 #ifdef ESP8266
+  // Set up the status LED pin
+  pinMode(STATUS_LED_PIN, OUTPUT);
   // Set up the ADC on I2C
   Wire.begin(I2C_DATA, I2C_CLOCK);
   // Initialise the steppers
@@ -409,8 +408,11 @@ void Mirobot::ledHandler(){
   digitalWrite(STATUS_LED_PIN, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
 #endif //AVR
 #ifdef ESP8266
-  uint8_t val = (abs((millis() % (uint32_t)LED_PULSE_TIME) - LED_PULSE_TIME/2) / (LED_PULSE_TIME/2)) * 50;
-  led.setRGBA(LED_COLOUR_NORMAL, val);
+  if(next_led_pulse < t){
+    next_led_pulse = t + 50;
+    uint8_t alpha = 5 + (abs((millis() % (uint32_t)LED_PULSE_TIME) - LED_PULSE_TIME/2) / (LED_PULSE_TIME/2)) * 20;
+    setRGBA(LED_COLOUR_NORMAL, alpha, STATUS_LED_PIN);
+  }
 #endif //ESP8266
 }
 

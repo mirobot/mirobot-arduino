@@ -13,6 +13,7 @@
 #include "lib/ShiftStepper.h"
 #include "lib/Discovery.h"
 #include "lib/WS2812B.h"
+#include <Wire.h>
 #endif
 
 #define SERIAL_BUFFER_LENGTH 180
@@ -188,6 +189,7 @@ class Mirobot {
     void takeUpSlack(byte, byte);
     void calibrateHandler();
     unsigned long next_servo_pulse;
+    unsigned long next_led_pulse = 0;
     unsigned char servo_pulses_left;
     boolean paused;
     boolean following;
