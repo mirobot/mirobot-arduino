@@ -17,9 +17,6 @@ ShiftStepper leftMotor(1);
 
 // Set up the LED
 WS2812B led(STATUS_LED_PIN);
-
-// Set up the ADC
-PCF8591 adc(I2C_DATA, I2C_CLOCK, PCF8591_ADDRESS);
 #endif //ESP8266
 
 Mirobot::Mirobot(){
@@ -44,6 +41,8 @@ void Mirobot::begin(unsigned char v){
 #endif //AVR
 
 #ifdef ESP8266
+  // Set up the ADC on I2C
+  Wire.begin(I2C_DATA, I2C_CLOCK);
   // Initialise the steppers
   ShiftStepper::setup(SHIFT_REG_DATA, SHIFT_REG_CLOCK, SHIFT_REG_LATCH);
   // Set up the line follower LED enable pin and turn it off
@@ -453,11 +452,19 @@ void Mirobot::readSensors(){
 void Mirobot::readSensors(){
   uint8_t temp[4];
   if(millis() >= nextADCRead){
-    nextADCRead = millis() + 10;
+    nextADCRead = millis() + 50;
     digitalWrite(LINE_LED_ENABLE, LOW);
 
     // Fetch the data from the ADC
-    adc.readSensors(temp);
+    Wire.beginTransmission(PCF8591_ADDRESS); // wake up PCF8591
+    Wire.write(0x44); // control byte - read ADC0 and increment counter
+    Wire.endTransmission();
+    Wire.requestFrom(PCF8591_ADDRESS, 5);
+    Wire.read(); // Padding bytes to allow conversion to complete
+    temp[0] = Wire.read();
+    temp[1] = Wire.read();
+    temp[2] = Wire.read();
+    temp[3] = Wire.read();
 
     // Sanity check to make sure I2C data hasn't gone out of sync
     if((temp[2] == 0 || temp[2] == 255) && (temp[3] == 0 || temp[3] == 255)){

@@ -11,7 +11,6 @@
 
 #ifdef ESP8266
 #include "lib/ShiftStepper.h"
-#include "lib/pcf8591.h"
 #include "lib/Discovery.h"
 #include "lib/WS2812B.h"
 #endif
