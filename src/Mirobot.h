@@ -14,6 +14,7 @@
 #include "lib/Discovery.h"
 #include "lib/WS2812B.h"
 #include <Wire.h>
+#include <ESP8266httpUpdate.h>
 #endif
 
 #define SERIAL_BUFFER_LENGTH 180
@@ -37,7 +38,7 @@
 #define STEPS_PER_DEGREE_V2  ((WHEEL_DISTANCE_V2 * 3.1416) / 360) * STEPS_PER_MM_V2
 
 
-#define MIROBOT_SUB_VERSION "1.0"
+#define MIROBOT_SUB_VERSION "1.1"
 
 #define EEPROM_OFFSET 0
 #define MAGIC_BYTE_1 0xF0
@@ -120,6 +121,9 @@ static void _collide(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &o
 static void _beep(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
 static void _calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
 static void _arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+#ifdef ESP8266
+static void _updateFirmware(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+#endif //ESP8266
 
 class Mirobot {
   public:
@@ -150,6 +154,7 @@ class Mirobot {
     static Mirobot getMeArmInstance();
 #ifdef ESP8266
     void enableWifi();
+    void updateFirmware(const char *);
 #endif
     static Mirobot * mainInstance;
     char hwVersion;

@@ -1,6 +1,6 @@
 #include "Mirobot.h"
 
-Marceau<24> marcel;
+Marceau<25> marcel;
 
 Mirobot *Mirobot::mainInstance;
 
@@ -195,6 +195,9 @@ void Mirobot::initCmds(){
   marcel.addCmd("beep",             _beep,             false);
   marcel.addCmd("calibrateSlack",   _calibrateSlack,   false);
   marcel.addCmd("arc",              _arc,              false);
+#ifdef ESP8266
+  marcel.addCmd("updateFirmware",   _updateFirmware,   true);
+#endif //ESP8266
 }
 
 void Mirobot::takeUpSlack(byte rightMotorDir, byte leftMotorDir){
@@ -564,6 +567,16 @@ void Mirobot::checkReady(){
   }
 }
 
+#ifdef ESP8266
+void Mirobot::updateFirmware(const char * url){
+  if(marcel.wifi.online){
+    if(ESPhttpUpdate.update("downloads.mime.co.uk", 80, url) != HTTP_UPDATE_OK){
+      Serial.println(ESPhttpUpdate.getLastErrorString());
+    }
+  }
+}
+#endif //ESP8266
+
 void Mirobot::loop(){
   marcel.loop();
   ledHandler();
@@ -692,4 +705,8 @@ static void _arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJs
   if(inJson["arg"].is<JsonArray&>() && inJson["arg"].size() == 2){
     Mirobot::mainInstance->arc(inJson["arg"][0].as<float>(), inJson["arg"][1].as<float>());
   }
+}
+
+static void _updateFirmware(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->updateFirmware(inJson["arg"].asString());
 }
