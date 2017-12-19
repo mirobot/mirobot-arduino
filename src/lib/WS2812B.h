@@ -25,13 +25,6 @@ static void setRGB(uint32_t rgb, int pin){
   os_intr_unlock();
 }
 
-static void setRGBA(uint32_t rgb, uint8_t alpha, int pin){
-  float factor = alpha / 255.0;
-  uint8_t r = ((rgb >> 16) & 0xFF) * factor;
-  uint8_t g = ((rgb >> 8) & 0xFF) * factor;
-  uint8_t b = (rgb & 0xFF) * factor;
-  setRGB((r << 16) | (g << 8) | b, pin);
-}
 #endif //ESP8266
 
 #endif

@@ -75,8 +75,6 @@
   #define LINE_LED_ENABLE 16
 
   #define STATUS_LED_PIN 15
-  #define LED_PULSE_TIME 6000.0
-  #define LED_COLOUR_NORMAL 0xFFFFFF
 
   #define PCF8591_ADDRESS B1001000
   #define I2C_DATA  0u
@@ -217,6 +215,7 @@ class Mirobot {
     uint8_t rightLineSensor;
     boolean wifiEnabled = false;
     long nextDiscovery = 0;
+    uint32_t lastLEDColour;
 };
 
 #endif

@@ -407,14 +407,24 @@ void Mirobot::collideHandler(){
 
 void Mirobot::ledHandler(){
   long t = millis();
+  uint32_t newLEDColour;
 #ifdef AVR
   digitalWrite(STATUS_LED_PIN, (!((t / 100) % 10) || !(((t / 100) - 2) % 10)));
 #endif //AVR
 #ifdef ESP8266
   if(next_led_pulse < t){
     next_led_pulse = t + 50;
-    uint8_t alpha = 5 + (abs((millis() % (uint32_t)LED_PULSE_TIME) - LED_PULSE_TIME/2) / (LED_PULSE_TIME/2)) * 20;
-    setRGBA(LED_COLOUR_NORMAL, alpha, STATUS_LED_PIN);
+
+    // On for 300ms every 2000 ms
+    if(!((t % 2000) / 300)){
+      newLEDColour = marcel.wifi.online ? 0x002200 : 0x000022;
+    }else{
+      newLEDColour = 0x000000;
+    }
+    if(newLEDColour != lastLEDColour){
+      lastLEDColour = newLEDColour;
+      setRGB(newLEDColour, STATUS_LED_PIN);
+    }
   }
 #endif //ESP8266
 }
