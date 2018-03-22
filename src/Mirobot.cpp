@@ -1,6 +1,6 @@
 #include "Mirobot.h"
 
-Marceau<25> marcel;
+Marceau<26> marcel;
 
 Mirobot *Mirobot::mainInstance;
 
@@ -11,6 +11,7 @@ HotStepper leftMotor(&PORTD, 0b11110000);
 #endif //AVR
 
 #ifdef ESP8266
+static Ticker tick;
 // Set up the steppers
 ShiftStepper rightMotor(0);
 ShiftStepper leftMotor(1);
@@ -119,7 +120,7 @@ void Mirobot::beginWifi(){
 void Mirobot::sendDiscovery(){
   if(nextDiscovery < millis()){
     if(marcel.wifi.online){
-      //send_discovery_request((uint32_t)WiFi.localIP(), marcel.settings.ap_ssid, "Mirobot V3");
+      send_discovery_request((uint32_t)WiFi.localIP(), marcel.settings.ap_ssid, "Mirobot-v3");
       nextDiscovery = millis() + 30000;
     }else{
       nextDiscovery = millis() + 1000;
@@ -130,6 +131,7 @@ void Mirobot::sendDiscovery(){
 
 void Mirobot::initSettings(){
   uint16_t eepromOffset = sizeof(MarceauSettings) + 2;
+  EEPROM.begin(sizeof(MarceauSettings) + sizeof(settings)+4);
   if(EEPROM.read(eepromOffset) == MAGIC_BYTE_1 && EEPROM.read(eepromOffset + 1) == MAGIC_BYTE_2 && EEPROM.read(eepromOffset + 2) == SETTINGS_VERSION){
     // We've previously written something valid to the EEPROM
     for (unsigned int t=0; t<sizeof(settings); t++){
@@ -158,6 +160,7 @@ void Mirobot::initSettings(){
 }
 
 void Mirobot::saveSettings(){
+  EEPROM.begin(sizeof(MarceauSettings) + sizeof(settings)+4);
   uint16_t eepromOffset = sizeof(MarceauSettings) + 2;
   EEPROM.write(eepromOffset, MAGIC_BYTE_1);
   EEPROM.write(eepromOffset + 1, MAGIC_BYTE_2);
@@ -197,6 +200,7 @@ void Mirobot::initCmds(){
   marcel.addCmd("arc",              _arc,              false);
 #ifdef ESP8266
   marcel.addCmd("updateFirmware",   _updateFirmware,   true);
+  marcel.addCmd("updateUI",         _updateUI,         true);
 #endif //ESP8266
 }
 
@@ -578,11 +582,32 @@ void Mirobot::checkReady(){
 }
 
 #ifdef ESP8266
-void Mirobot::updateFirmware(const char * url){
+void Mirobot::updateFirmware(){
   if(marcel.wifi.online){
-    if(ESPhttpUpdate.update("downloads.mime.co.uk", 80, url) != HTTP_UPDATE_OK){
+    ESPhttpUpdate.rebootOnUpdate(true);
+    if(ESPhttpUpdate.update("http://downloads.mime.co.uk/Mirobot/v3/mirobot-latest.bin", "") != HTTP_UPDATE_OK){
       Serial.println(ESPhttpUpdate.getLastErrorString());
     }
+  }
+}
+
+void Mirobot::updateUI(){
+  if(marcel.wifi.online){
+    ESPhttpUpdate.rebootOnUpdate(false);
+    if(ESPhttpUpdate.updateSpiffs("http://downloads.mime.co.uk/Mirobot/v3/ui-latest.bin", "") != HTTP_UPDATE_OK){
+      Serial.println(ESPhttpUpdate.getLastErrorString());
+    }
+  }
+}
+
+void Mirobot::updateHandler(){
+  if(_updateFWflag){
+    _updateFWflag = false;
+    updateFirmware();
+  }
+  if(_updateUIflag){
+    _updateUIflag = false;
+    updateUI();
   }
 }
 #endif //ESP8266
@@ -595,7 +620,10 @@ void Mirobot::loop(){
   calibrateHandler();
   sensorNotifier();
 #ifdef ESP8266
-  if(wifiEnabled) sendDiscovery();
+  if(wifiEnabled){
+    sendDiscovery();
+    updateHandler();
+  }
 #endif
   checkReady();
 }
@@ -717,6 +745,11 @@ static void _arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJs
   }
 }
 
+#ifdef ESP8266
 static void _updateFirmware(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
-  Mirobot::mainInstance->updateFirmware(inJson["arg"].asString());
+  Mirobot::mainInstance->_updateFWflag = true;
 }
+static void _updateUI(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson){
+  Mirobot::mainInstance->_updateUIflag = true;
+}
+#endif //ESP8266

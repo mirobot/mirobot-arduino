@@ -1,0 +1,41 @@
+{
+  "version": "3.1.1",
+  "apps":[
+    {
+      "id":"blockly",
+      "name":"Blockly",
+      "description": "Control Mirobot using this powerful drag and drop language",
+      "js":"blockly.js"
+    },
+    {
+      "id":"javascript",
+      "name":"Javascript",
+      "description": "Use the programming language of the web to control Mirobot",
+      "js":"javascript.js"
+    },
+    {
+      "id":"point-click",
+      "name":"Point and Click",
+      "description": "Create drawings easily by clicking on a canvas",
+      "js":"point-click.js"
+    },
+    {
+      "id":"python",
+      "name":"Python",
+      "description": "Use this powerful language to control Mirobot in your browser",
+      "js":"python.js"
+    },
+    {
+      "id":"remote",
+      "name":"Remote Control",
+      "description": "Simple buttons let you move Mirobot easily",
+      "js":"blockly.js"
+    },
+    {
+      "id":"snap",
+      "name":"Snap!",
+      "description": "Snap! is very similar to Scratch and is good for using the addon sensors in code",
+      "js":"snap.js"
+    }
+  ]
+}

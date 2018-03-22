@@ -43,7 +43,7 @@
 #define EEPROM_OFFSET 0
 #define MAGIC_BYTE_1 0xF0
 #define MAGIC_BYTE_2 0x0D
-#define SETTINGS_VERSION 1
+#define SETTINGS_VERSION 2
 
 #define NOTE_C4  262
 
@@ -121,6 +121,7 @@ static void _calibrateSlack(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonOb
 static void _arc(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
 #ifdef ESP8266
 static void _updateFirmware(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
+static void _updateUI(ArduinoJson::JsonObject &inJson, ArduinoJson::JsonObject &outJson);
 #endif //ESP8266
 
 class Mirobot {
@@ -152,7 +153,11 @@ class Mirobot {
     static Mirobot getMeArmInstance();
 #ifdef ESP8266
     void enableWifi();
-    void updateFirmware(const char *);
+    void updateFirmware();
+    void updateHandler();
+    void updateUI();
+    boolean _updateFWflag = false;
+    boolean _updateUIflag = false;
 #endif
     static Mirobot * mainInstance;
     char hwVersion;
