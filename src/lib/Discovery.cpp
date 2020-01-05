@@ -1,5 +1,5 @@
 #ifdef ESP8266
-#include "discovery.h"
+#include "Discovery.h"
 
 static uint32_t device_ip;
 static char device_name[33];
